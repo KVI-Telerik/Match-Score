@@ -1,9 +1,12 @@
+from fastapi import HTTPException, Header
 from passlib.context import CryptContext
+from starlette import status
 
+# from common.auth_middleware import validate_token
 from data.database import DatabaseConnection
 from data.models import User
 from passlib.hash import bcrypt
-from jose import jwt
+from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Union
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -70,3 +73,23 @@ async def login_user(email: str, password: str) -> Optional[Dict[str, str]]:
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     return {"access_token": token, "token_type": "bearer"}
+
+
+async def is_admin(token: str) -> bool:
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("id")
+        if user_id is None:
+            return False
+
+        query = "SELECT is_admin FROM users WHERE id = $1"
+        result = await DatabaseConnection.read_query(query, user_id)
+
+        if result and result[0] and result[0][0]:
+            return True
+        return False
+
+    except JWTError:
+        return False
+
