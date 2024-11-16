@@ -2,7 +2,7 @@
 # type: ignore
 from datetime import datetime
 from pydantic import Field, BaseModel, constr, field_validator
-from datetime import datetime
+from datetime import datetime, date
 from typing import Optional, List, Literal
 
 
