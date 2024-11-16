@@ -1,6 +1,6 @@
 
 # type: ignore
-from datetime import datetime
+from datetime import datetime, timezone
 from pydantic import Field, BaseModel, constr, field_validator
 from datetime import datetime, date
 from typing import Optional, List, Literal
@@ -33,17 +33,16 @@ class User(BaseModel):
 class PlayerProfile(BaseModel):
     id: Optional[int] = None
     full_name: constr(min_length=2, max_length=50) = Field(..., description="Full name of the player with minimum 2 and maximum 50 characters")
-    country: constr(min_length=4, max_length=56) = Field(..., description="Country of the player")
+    country: Optional[str]   # constr(min_length=4, max_length=56)) = Field(..., description="Country of the player")
     sports_club: Optional[str] = None
     wins: Optional[int]
     losses: Optional[int]
-    user_id: Optional[int]
     draws: Optional[int]
-
+    user_id: Optional[int]
     
 
     @classmethod
-    def from_query_result(cls, id, full_name, country, sports_club, wins, losses, user_id, draws):
+    def from_query_result(cls, id, full_name, country, sports_club, wins, losses, draws, user_id):
         return cls(
             id=id,
             full_name=full_name,
@@ -51,31 +50,57 @@ class PlayerProfile(BaseModel):
             sports_club=sports_club,
             wins=wins,
             losses=losses,
-            user_id=user_id,
-            draws=draws
+            draws=draws,
+            user_id=user_id
+
         )
-    
+
 
 class Match(BaseModel):
     id: Optional[int] = None
-    format: constr(min_length=3, max_length=40) = Field(..., description='Format of the match')
-    date: datetime = Field(..., description="Date of the match in YYYY-MM-DD format")
-    participants: List[int] =  Field(..., description="List of participant IDs")
-    tournament_id: Optional[int]
-    tournament_type: Optional[Literal['league', 'knockout']] = None  
-    
+    format: constr(min_length=3, max_length=40) = Field(
+        ...,
+        description='Format of the match Time limited duration of 60 minutes or Score limited first to 9 points'
+    )
+    date: datetime = Field(
+        ...,
+        description="Date of the match in YYYY-MM-DD format"
+    )
+    participants: List[str] = Field(
+        ...,
+        description="List of participant full names"
+    )
+    tournament_id: Optional[int] = Field(
+        default=None,
+        description="Optional tournament ID for tournament matches"
+    )
+    tournament_type: Optional[Literal['league', 'knockout']] = Field(
+        default=None,
+        description="Type of tournament if match is part of a tournament"
+    )
+
     @field_validator('date')
-    def date_not_in_past(cls, v):
-        if v < datetime.now().date():
+    def date_not_in_past(cls, v: datetime) -> datetime:
+        if v.tzinfo is not None:
+            v = v.replace(tzinfo=None)
+
+        current_time = datetime.now()
+        if v < current_time:
             raise ValueError("Date of the match cannot be in the past.")
         return v
-    
+
     @field_validator('participants')
-    def check_min_participants(cls, v):
+    def validate_participants(cls, v: List[str]) -> List[str]:
         if len(v) < 2:
-            raise ValueError('There must be at least 2 participants')
+            raise ValueError("Match must have at least 2 participants")
         return v
-    
+
+    @field_validator('format')
+    def validate_format(cls, v: str) -> str:
+        valid_formats = ['Time limited', 'Score limited']
+        if not any(format_type in v for format_type in valid_formats):
+            raise ValueError("Format must be either 'Time limited' or 'Score limited'")
+        return v
     @classmethod
     def from_query_result(cls, id, format, date, participants, tournament_id):
         return cls(
