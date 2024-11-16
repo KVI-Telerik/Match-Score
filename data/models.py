@@ -1,4 +1,6 @@
-#type: ignore
+
+# type: ignore
+from datetime import datetime
 from pydantic import Field, BaseModel, constr, field_validator
 from datetime import datetime
 from typing import Optional, List, Literal
@@ -12,10 +14,11 @@ class User(BaseModel):
     username: constr(min_length=4, max_length=20) = Field(..., description="Username with minimum 4 and maximum 20 characters") 
     password: constr(min_length=8) = Field(..., description="Password must have at least 8 characters")
     email: constr(pattern=r'^[\w\.-]+@[\w\.-]+\.\w+$') = Field(..., description="Email address of the user")
-    admin: Optional[bool] = Field(False, description="Whether the user has admin privileges") 
+    is_admin: Optional[bool] = Field(False, description="Whether the user has admin privileges") 
+    is_director: Optional[bool] = Field(False, description="Whether the user has director privileges")
 
     @classmethod
-    def from_query_result(cls,id,first_name,last_name,username, admin,password, email):
+    def from_query_result(cls,id,first_name,last_name,username,is_admin,password, email, is_director):
         return cls(
             id=id,
             first_name=first_name,
@@ -23,7 +26,8 @@ class User(BaseModel):
             username=username,
             password=password,
             email=email,
-            admin=admin,
+            is_admin=is_admin,
+            is_director=is_director
         )
     
 class PlayerProfile(BaseModel):
@@ -55,7 +59,7 @@ class PlayerProfile(BaseModel):
 class Match(BaseModel):
     id: Optional[int] = None
     format: constr(min_length=3, max_length=40) = Field(..., description='Format of the match')
-    date: date = Field(..., description="Date of the match in YYYY-MM-DD format")
+    date: datetime = Field(..., description="Date of the match in YYYY-MM-DD format")
     participants: List[int] =  Field(..., description="List of participant IDs")
     tournament_id: Optional[int]
     tournament_type: Optional[Literal['league', 'knockout']] = None  
@@ -83,3 +87,39 @@ class Match(BaseModel):
         )
     
 
+class Tournament(BaseModel):
+    id: Optional[int] = None
+    title: constr(min_length=3, max_length=50) = Field(..., description="Title of the tournament")
+    format: Optional[Literal['league', 'knockout']] = None  
+    match_format: Optional[Literal['score', 'time']] = None
+    prize: Optional[int]
+
+    @classmethod
+    def from_query_result(cls, id, title, format, match_format, prize):
+        return cls(
+            id=id,
+            title=title,
+            format=format,
+            match_format=match_format,
+            prize=prize
+        )
+    
+
+class TournamentParticipants(BaseModel):
+    tournament_id: Optional[int]
+    player_profile_id: Optional[int]
+    wins: Optional[int]
+    losses: Optional[int]
+    draws: Optional[int]
+
+    @classmethod
+    def from_query_result(cls, tournament_id, player_profile_id, wins, losses, draws):
+        return cls(
+            tournament_id=tournament_id,
+            player_profile_id=player_profile_id,
+            wins=wins,
+            losses=losses,
+            draws=draws
+            
+        )
+    
