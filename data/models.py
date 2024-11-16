@@ -18,7 +18,7 @@ class User(BaseModel):
     is_director: Optional[bool] = Field(False, description="Whether the user has director privileges")
 
     @classmethod
-    def from_query_result(cls,id,first_name,last_name,username,is_admin,password, email, is_director):
+    def from_query_result(cls,id,first_name,last_name,username,password, email,is_admin, is_director):
         return cls(
             id=id,
             first_name=first_name,
@@ -120,6 +120,10 @@ class TournamentParticipants(BaseModel):
             wins=wins,
             losses=losses,
             draws=draws
-            
+
         )
-    
+
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
