@@ -102,13 +102,15 @@ class Match(BaseModel):
             raise ValueError("Format must be either 'Time limited' or 'Score limited'")
         return v
     @classmethod
-    def from_query_result(cls, id, format, date, participants, tournament_id):
+    def from_query_result(cls, id, format, date, participants, tournament_id, tournament_type):
+        participants_list = participants if isinstance(participants, list) else []
         return cls(
             id=id,
             format=format,
             date=date,
-            participants=participants,
-            tournament_id=tournament_id
+            participants=participants_list,
+            tournament_id=tournament_id,
+            tournament_type=tournament_type
         )
     
 

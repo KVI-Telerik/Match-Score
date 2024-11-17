@@ -2,6 +2,7 @@ from typing import Optional, List
 from data.models import Match, PlayerProfile
 from data.database import DatabaseConnection
 from services import player_profile_service
+from datetime import datetime
 
 
 
@@ -88,3 +89,58 @@ async def get_match_participants(match_id: int) -> List[PlayerProfile]:
     """
     results = await DatabaseConnection.read_query(query, match_id)
     return [PlayerProfile.from_query_result(*row) for row in results]
+
+
+async def get_by_id(match_id: int) -> Optional[Match]:
+    query = """
+        SELECT id, format, date, tournament_id, tournament_type
+        FROM match
+        WHERE id = $1
+    """
+    result = await DatabaseConnection.read_query(query, match_id)
+    if not result:
+        return None
+
+    match_data = result[0]
+    participants = await get_match_participants(match_id)
+    return Match(
+        id=match_data[0],
+        format=match_data[1],
+        date=match_data[2],
+        participants=[p.full_name for p in participants],
+        tournament_id=match_data[3],
+        tournament_type=match_data[4]
+    )
+
+async def update_score(match_id: int, player_id:int , score:int) -> Optional[Match]:
+    match = await get_by_id(match_id)
+    if not match:
+        return None
+    
+
+    query = """
+        UPDATE match_participants
+        SET score = score + $1
+        WHERE match_id = $2 AND player_profile_id = $3
+    """
+    success = await DatabaseConnection.update_query(query, score, match_id,player_id)
+    if not success:
+        return None
+
+    
+    return True
+
+async def reschedule_match(match_id: int, new_date: datetime) -> Optional[Match]:
+    if new_date.tzinfo is not None :
+        new_date = new_date.replace(tzinfo=None)
+
+    query = """
+        UPDATE match
+        SET date = $1
+        WHERE id = $2
+    """
+    success = await DatabaseConnection.update_query(query, new_date, match_id)
+    if not success:
+        return None
+
+    return await get_by_id(match_id)
