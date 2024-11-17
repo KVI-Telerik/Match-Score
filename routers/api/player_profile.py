@@ -36,3 +36,4 @@ async def create_profile(
         )
 
     return {"message": "player registered successfully"}
+

@@ -9,6 +9,9 @@ from passlib.hash import bcrypt
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Union
+
+from services.player_profile_service import get_player_profile_by_name
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = "6a631f3a77008d5586d9ecc2ca7bea47695d575b5e6195dd6ca200829a8ae40c"
 ALGORITHM = "HS256"
@@ -92,4 +95,25 @@ async def is_admin(token: str) -> bool:
 
     except JWTError:
         return False
+
+
+async def claim(token):
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    user_id = payload.get("id")
+    if user_id is None:
+        return False
+    user = await get_user_by_id(user_id)
+    first_name = user.first_name
+    last_name = user.last_name
+    fullname = first_name + " " + last_name
+
+    player_profile = await get_player_profile_by_name(fullname)
+    if player_profile:
+       query = """
+            UPDATE player_profiles 
+            SET user_id = $1 
+            WHERE LOWER(TRIM(full_name)) = LOWER(TRIM($2))
+            """
+       result = await DatabaseConnection.update_query(query, user_id, fullname)
+       return bool(result)
 

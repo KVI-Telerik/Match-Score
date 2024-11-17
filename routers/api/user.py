@@ -1,6 +1,6 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Header
 from data.models import User, UserLogin
-from services.user_service import create_user, login_user
+from services.user_service import create_user, login_user, claim
 
 users_router = APIRouter(prefix='/api/users', tags=['users'])
 
@@ -29,3 +29,19 @@ async def login_user_endpoint(login_data: UserLogin):
             detail="Invalid email or password"
         )
     return token
+
+@users_router.put("/player_profile",status_code=status.HTTP_200_OK)
+async def claim_player_profile(token: str = Header(None)):
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authorization token is missing"
+        )
+
+    claimed = await claim(token)
+    if not claimed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Player profile with such name can`t be claimed or does not exist"
+        )
+    return {"message": "profile claimed successfully"}
