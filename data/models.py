@@ -152,3 +152,16 @@ class TournamentParticipants(BaseModel):
 class UserLogin(BaseModel):
     email: str
     password: str
+
+class MatchParticipants(BaseModel):
+    match_id: Optional[int]
+    player_profile_id: Optional[int]
+    score: Optional[int]
+
+    @classmethod
+    def from_query_result(cls, match_id, player_profile_id, score):
+        return cls(
+            match_id=match_id,
+            player_profile_id=player_profile_id,
+            score=score
+        )
