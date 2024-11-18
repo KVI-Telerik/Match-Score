@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, Header
 from data.models import User, UserLogin
-from services.user_service import create_user, login_user, claim
+from services.user_service import all_requests, approve_director_claim, approve_player_claim, claim_director_request, claim_request, claim_type, create_user, is_admin, login_user
 
 users_router = APIRouter(prefix='/api/users', tags=['users'])
 
@@ -30,7 +30,7 @@ async def login_user_endpoint(login_data: UserLogin):
         )
     return token
 
-@users_router.put("/player_profile",status_code=status.HTTP_200_OK)
+@users_router.post("/player_profile",status_code=status.HTTP_200_OK)
 async def claim_player_profile(token: str = Header(None)):
     if not token:
         raise HTTPException(
@@ -38,10 +38,74 @@ async def claim_player_profile(token: str = Header(None)):
             detail="Authorization token is missing"
         )
 
-    awaiting_approval = await claim(token)
+    awaiting_approval = await claim_request(token)
     if not awaiting_approval:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Player profile with such name can`t be claimed or does not exist"
         )
     return {"message": "awaiting approval"}
+
+
+@users_router.post("/director_profile",status_code=status.HTTP_200_OK)
+async def claim_director_profile(token: str = Header(None)):
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authorization token is missing"
+        )
+
+    awaiting_approval = await claim_director_request(token)
+    if not awaiting_approval:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Player profile with such name can`t be claimed or does not exist"
+        )
+    return {"message": "awaiting approval"}
+
+@users_router.get("/requests",status_code=status.HTTP_200_OK)
+async def get_all_requests(token: str = Header(None)):
+    if not token or not await is_admin(token):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    result = await all_requests()
+    return result
+
+
+@users_router.put("/player_request/{id}",status_code=status.HTTP_200_OK)
+async def approve_player_request(id:int ,token: str = Header(None)):
+    if not token or not await is_admin(token):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    claim = await claim_type(id)
+    
+    if claim != 'player claim':
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="Wrong claim.")
+    approved = await approve_player_claim(id)
+    if approved:
+        return {"message": "approved!"}
+    else: 
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="Failed to approve request.")
+    
+
+
+@users_router.put("/director_request/{id}",status_code=status.HTTP_200_OK)
+async def approve_player_request(id:int ,token: str = Header(None)):
+    if not token or not await is_admin(token):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    claim = await claim_type(id)
+    if claim != 'director claim':
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="Wrong claim.")
+    approved = await approve_director_claim(id)
+    if approved:
+        return {"message": "approved!"}
+    else: 
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,detail="Failed to approve request.")
+    

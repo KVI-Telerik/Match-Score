@@ -4,7 +4,7 @@ from starlette import status
 
 # from common.auth_middleware import validate_token
 from data.database import DatabaseConnection
-from data.models import User
+from data.models import Requests, User
 from passlib.hash import bcrypt
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
@@ -97,7 +97,7 @@ async def is_admin(token: str) -> bool:
         return False
 
 
-async def claim(token):
+async def claim_request(token):
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     user_id = payload.get("id")
     if user_id is None:
@@ -113,12 +113,81 @@ async def claim(token):
        INSERT INTO requests (user_id, player_profile_id)
         VALUES ($1, $2)
        """
-    #    query = """
-    #         UPDATE users 
-    #         SET player_profile_id = $1 
-    #         WHERE LOWER(TRIM($2)) = LOWER(TRIM($3))
-    #         """
 
        result = await DatabaseConnection.insert_query(query, user_id, player_profile.id)
        return result
+    
 
+async def claim_director_request(token):
+    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    user_id = payload.get("id")
+    if user_id is None:
+        return False
+    
+    query = """
+        INSERT INTO requests (user_id)
+        VALUES ($1)
+       """
+    
+    result = await DatabaseConnection.insert_query(query, user_id)
+    return result
+
+
+async def all_requests():
+    query = """
+     SELECT * FROM requests
+    """
+    result = await DatabaseConnection.read_query(query)
+    return [Requests.from_query_result(*row) for row in result]
+
+async def claim_type(id):
+    query = """
+     SELECT player_profile_id FROM requests
+     WHERE id = $1
+    """
+    result = await DatabaseConnection.read_query(query, id)
+    if result[0][0] is None:
+        return 'director claim'
+    else:
+        return 'player claim'
+    
+
+async def approve_player_claim(id):
+    query = """
+    UPDATE requests
+    SET approved_or_denied = True
+    WHERE id = $1
+    """
+    status = await DatabaseConnection.update_query(query, id)
+    if status:
+        query = """
+        UPDATE users
+        SET player_profile_id = r.player_profile_id
+        FROM requests r
+        WHERE users.id = r.user_id
+        AND r.id = $1
+        """
+        result = await DatabaseConnection.update_query(query, id)
+        return result
+    else:
+        return status
+
+async def approve_director_claim(id):
+    query = """
+    UPDATE requests
+    SET approved_or_denied = True
+    WHERE id = $1
+    """
+    status = await DatabaseConnection.update_query(query, id)
+    if status:
+        query = """
+        UPDATE users
+        SET is_director = True
+        FROM requests r
+        WHERE users.id = r.user_id
+        AND r.id = $1
+        """
+        result = await DatabaseConnection.update_query(query, id)
+        return result
+    else:
+        return status

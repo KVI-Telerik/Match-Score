@@ -172,3 +172,13 @@ class Requests(BaseModel):
     user_id: int = Field(..., description="Id of the user making the request")
     player_profile_id: Optional[int] = None
     approved_or_denied: Optional[bool] = None
+
+
+    @classmethod
+    def from_query_result(cls, id, user_id, player_profile_id, approved_or_denied):
+        return cls(
+            id=id,
+            user_id=user_id,
+            player_profile_id=player_profile_id,
+            approved_or_denied=approved_or_denied,
+        )
