@@ -16,9 +16,10 @@ class User(BaseModel):
     email: constr(pattern=r'^[\w\.-]+@[\w\.-]+\.\w+$') = Field(..., description="Email address of the user")
     is_admin: Optional[bool] = Field(False, description="Whether the user has admin privileges") 
     is_director: Optional[bool] = Field(False, description="Whether the user has director privileges")
+    player_profile_id: Optional[int] = None
 
     @classmethod
-    def from_query_result(cls,id,first_name,last_name,username,password, email,is_admin, is_director):
+    def from_query_result(cls,id,first_name,last_name,username,password, email,is_admin, is_director, player_profile_id):
         return cls(
             id=id,
             first_name=first_name,
@@ -27,7 +28,8 @@ class User(BaseModel):
             password=password,
             email=email,
             is_admin=is_admin,
-            is_director=is_director
+            is_director=is_director,
+            player_profile_id=player_profile_id
         )
     
 class PlayerProfile(BaseModel):
@@ -38,11 +40,9 @@ class PlayerProfile(BaseModel):
     wins: Optional[int]
     losses: Optional[int]
     draws: Optional[int]
-    user_id: Optional[int]
     
-
     @classmethod
-    def from_query_result(cls, id, full_name, country, sports_club, wins, losses, draws, user_id):
+    def from_query_result(cls, id, full_name, country, sports_club, wins, losses, draws, ):
         return cls(
             id=id,
             full_name=full_name,
@@ -51,8 +51,6 @@ class PlayerProfile(BaseModel):
             wins=wins,
             losses=losses,
             draws=draws,
-            user_id=user_id
-
         )
 
 
@@ -167,3 +165,10 @@ class MatchParticipants(BaseModel):
             player_profile_id=player_profile_id,
             score=score
         )
+    
+
+class Requests(BaseModel):
+    id: Optional[int] = None
+    user_id: int = Field(..., description="Id of the user making the request")
+    player_profile_id: Optional[int] = None
+    approved_or_denied: Optional[bool] = None

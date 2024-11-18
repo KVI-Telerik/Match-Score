@@ -38,10 +38,10 @@ async def claim_player_profile(token: str = Header(None)):
             detail="Authorization token is missing"
         )
 
-    claimed = await claim(token)
-    if not claimed:
+    awaiting_approval = await claim(token)
+    if not awaiting_approval:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Player profile with such name can`t be claimed or does not exist"
         )
-    return {"message": "profile claimed successfully"}
+    return {"message": "awaiting approval"}

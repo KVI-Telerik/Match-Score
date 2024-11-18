@@ -110,10 +110,15 @@ async def claim(token):
     player_profile = await get_player_profile_by_name(fullname)
     if player_profile:
        query = """
-            UPDATE player_profiles 
-            SET user_id = $1 
-            WHERE LOWER(TRIM(full_name)) = LOWER(TRIM($2))
-            """
-       result = await DatabaseConnection.update_query(query, user_id, fullname)
-       return bool(result)
+       INSERT INTO requests (user_id, player_profile_id)
+        VALUES ($1, $2)
+       """
+    #    query = """
+    #         UPDATE users 
+    #         SET player_profile_id = $1 
+    #         WHERE LOWER(TRIM($2)) = LOWER(TRIM($3))
+    #         """
+
+       result = await DatabaseConnection.insert_query(query, user_id, player_profile.id)
+       return result
 

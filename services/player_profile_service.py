@@ -7,7 +7,7 @@ from data.models import PlayerProfile
 async def get_player_profile_by_name(full_name: str) -> Optional[PlayerProfile]:
 
     query = """
-        SELECT id, full_name, country, sports_club, wins, losses, draws, user_id 
+        SELECT id, full_name, country, sports_club, wins, losses, draws
         FROM player_profiles 
         WHERE LOWER(TRIM(full_name)) = LOWER(TRIM($1))
     """
