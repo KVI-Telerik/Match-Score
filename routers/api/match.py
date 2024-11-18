@@ -12,7 +12,6 @@ async def create_new_match(
     match_data: Match,
     token: str = Header(None)
 ):
-    """Create a new match with automatic player profile creation"""
     if not token or not await is_admin(token):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -40,7 +39,7 @@ async def update_match_score(
     score: int,
     token: str = Header(None)
 ):
-    """Update match score for a player"""
+
     if not token or not await is_admin(token):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
