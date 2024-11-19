@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict
-from data.models import Match, MatchParticipants, MatchParticipantsResponse, MatchResponseModel, PlayerProfile
+from data.models import Match, MatchParticipants, PlayerProfile
 from data.database import DatabaseConnection
 from services import player_profile_service
 from datetime import datetime
