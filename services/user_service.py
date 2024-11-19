@@ -96,6 +96,24 @@ async def is_admin(token: str) -> bool:
     except JWTError:
         return False
 
+async def is_director(token: str) -> bool:
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("id")
+        if user_id is None:
+            return False
+
+        query = "SELECT is_director FROM users WHERE id = $1"
+        result = await DatabaseConnection.read_query(query, user_id)
+
+        if result and result[0] and result[0][0]:
+            return True
+        return False
+
+    except JWTError:
+        return False
+
 
 async def claim_request(token):
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
