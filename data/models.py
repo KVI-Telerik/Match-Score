@@ -72,7 +72,7 @@ class Match(BaseModel):
         default=None,
         description="Optional tournament ID for tournament matches"
     )
-    tournament_type: Optional[Literal['league', 'knockout']] = Field(
+    tournament_type: Optional[Literal['League', 'Knockout']] = Field(
         default=None,
         description="Type of tournament if match is part of a tournament"
     )
@@ -142,7 +142,7 @@ class Tournament(BaseModel):
             raise ValueError("Format must be either 'Knockout' or 'League'")
         return v
 
-    @field_validator('format')
+    @field_validator('match_format')
     def validate_format(cls, v: str) -> str:
         valid_formats = ['Time limited', 'Score limited']
         if not any(format_type in v for format_type in valid_formats):
