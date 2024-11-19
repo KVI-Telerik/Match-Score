@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Header, status
 from typing import List
 from data.models import Tournament, PlayerProfile
 from services import tournament_service
-from services.user_service import is_admin
+from services.user_service import is_admin, is_director
 from datetime import datetime
 
 tournaments_router = APIRouter(prefix='/api/tournaments', tags=['tournaments'])
@@ -14,15 +14,16 @@ async def create_tournament(
     token: str = Header(None)
 ):
     if not token or not await is_admin(token):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Admin access required"
-        )
+        if not await is_director(token):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin or director access required"
+            )
 
-    if len(participants) < 2:
+    if len(participants) < 2 or len(participants) % 2 != 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Tournament must have at least 2 participants"
+            detail="Tournament must have at least 2 participants and the total number of participants has to be even"
         )
 
     tournament = await tournament_service.create(tournament_data, participants)

@@ -115,8 +115,14 @@ class Match(BaseModel):
 class Tournament(BaseModel):
     id: Optional[int] = None
     title: constr(min_length=3, max_length=50) = Field(..., description="Title of the tournament")
-    format: Optional[Literal['league', 'knockout']] = None  
-    match_format: Optional[Literal['score', 'time']] = None
+    format: constr(min_length=3, max_length=40) = Field(
+        ...,
+        description='Format of the tournament knockout or league'
+    )
+    match_format: constr(min_length=3, max_length=40) = Field(
+        ...,
+        description='Format of the match Time limited duration of 60 minutes or Score limited first to 9 points'
+    )
     prize: Optional[int]
 
     @classmethod
@@ -128,8 +134,20 @@ class Tournament(BaseModel):
             match_format=match_format,
             prize=prize
         )
-    
 
+    @field_validator('format')
+    def validate_format(cls, v: str) -> str:
+        valid_formats = ['Knockout', 'League']
+        if not any(format_type in v for format_type in valid_formats):
+            raise ValueError("Format must be either 'Knockout' or 'League'")
+        return v
+
+    @field_validator('format')
+    def validate_format(cls, v: str) -> str:
+        valid_formats = ['Time limited', 'Score limited']
+        if not any(format_type in v for format_type in valid_formats):
+            raise ValueError("Format must be either 'Time limited' or 'Score limited'")
+        return v
 class TournamentParticipants(BaseModel):
     tournament_id: Optional[int]
     player_profile_id: Optional[int]

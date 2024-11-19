@@ -16,7 +16,7 @@ async def create_new_match(
         if not await is_director(token):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="Admin access required"
+                detail="Admin or director access required"
             )
 
     if len(match_data.participants) < 2:
