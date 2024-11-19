@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header, status
 from typing import List
 from data.models import Match, PlayerProfile
+from services import match_service
 from services.match_service import create
 from services.user_service import is_admin, is_director
 
@@ -30,5 +31,19 @@ async def create_new_match(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Failed to create match. Check for duplicate player names or missing player data."
+        )
+    return match
+
+# @matches_router.get('/', response_model=Match)
+# async def get_matches(sort: str | None = None, sort_by: str | None = None):
+
+@matches_router.get('/{match_id}', response_model=Match)
+async def get_match_by_id(match_id: int):
+    match = await match_service.get_match_with_scores(match_id)
+
+    if not match:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Match not found"
         )
     return match

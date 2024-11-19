@@ -183,7 +183,6 @@ class MatchParticipants(BaseModel):
             player_profile_id=player_profile_id,
             score=score
         )
-    
 
 class Requests(BaseModel):
     id: Optional[int] = None
