@@ -131,10 +131,46 @@ async def create_league_matches(tournament_id, participants: List[str], match_fo
         days = 0.1
         
     return True
-        
-        
-    
 
+
+async def advance_knockout_tournament(tournament_id: int) -> bool:
+
+    query = """
+        SELECT id FROM match 
+        WHERE tournament_id = $1 
+        AND tournament_type = 'Knockout'
+    """
+    matches = await DatabaseConnection.read_query(query, tournament_id)
+
+    winners = []
+    for match in matches:
+        match_data = await match_service.get_match_with_scores(match[0])
+        if not match_data:
+            continue
+
+        participant_scores = [p.split('-') for p in match_data["participants"]]
+        winner = max(participant_scores, key=lambda x: int(x[1]))
+        winners.append(winner[0])
+
+
+    days = 1
+    for i in range(0, len(winners), 2):
+        if i + 1 >= len(winners):
+            break
+
+        match_data = Match(
+            format=match_data["format"],
+            date=datetime.now() + timedelta(days=days),
+            participants=[winners[i], winners[i + 1]],
+            tournament_id=tournament_id,
+            tournament_type="Knockout"
+        )
+
+        if not await match_service.create(match_data):
+            return False
+        days += 1
+
+    return True
 
 
 

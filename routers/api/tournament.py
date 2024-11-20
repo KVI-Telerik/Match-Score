@@ -33,3 +33,19 @@ async def create_tournament(
             detail="Failed to create tournament"
         )
     return tournament
+
+@tournaments_router.post('/{id}/next_round',status_code=status.HTTP_201_CREATED)
+async def next_round(tournament_id:int,token: str = Header(None)):
+    if not token or not await is_admin(token):
+        if not await is_director(token):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin or director access required"
+            )
+        success = await tournament_service.advance_knockout_tournament(tournament_id)
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Failed to advance tournament"
+            )
+        return {"message": "Tournament is proceeding to next stage!"}
