@@ -133,44 +133,146 @@ async def create_league_matches(tournament_id, participants: List[str], match_fo
     return True
 
 
-async def advance_knockout_tournament(tournament_id: int) -> bool:
+# async def advance_knockout_tournament(tournament_id: int) -> bool:
+#         match_count_query = """
+#             SELECT COUNT(id) FROM match
+#             WHERE tournament_id = $1
+#             AND tournament_type = 'Knockout'
+#             """
+#         match_count = await DatabaseConnection.read_query(match_count_query, tournament_id)
 
+#         if match_count[0][0] == 1:
+            
+#             query = """
+#                 SELECT id FROM match 
+#                 WHERE tournament_id = $1 
+#                 AND tournament_type = 'Knockout'
+#             """
+#             matches = await DatabaseConnection.read_query(query, tournament_id)
+
+#             match_data = await match_service.get_match_with_scores(matches[0][0])
+#             if not match_data:
+#                 return False
+
+#             participant_scores = [p.split('-') for p in match_data["participants"]]
+#             winner = max(participant_scores, key=lambda x: int(x[1]))[0]
+
+#             query = """
+#                 INSERT INTO tournament_winner (tournament_id, player_profile_id)
+#                 VALUES ($1, $2)
+#             """
+#             await DatabaseConnection.update_query(query, tournament_id, winner)
+#         else:
+
+
+#     query = """
+#         SELECT id FROM match 
+#         WHERE tournament_id = $1 AND finished = False
+#         AND tournament_type = 'Knockout'
+#     """
+#     matches = await DatabaseConnection.read_query(query, tournament_id)
+#     update_query = """ UPDATE match SET finished = True WHERE tournament_id = $1
+#     AND tournament_type = 'Knockout' AND finished = False"""
+#     await DatabaseConnection.update_query(update_query, tournament_id)
+
+#     winners = []
+#     for match in matches:
+#         match_data = await match_service.get_match_with_scores(match[0])
+#         if not match_data:
+#             continue
+
+#         participant_scores = [p.split('-') for p in match_data["participants"]]
+#         winner = max(participant_scores, key=lambda x: int(x[1]))
+#         winners.append(winner[0])
+
+
+#     days = 1
+#     for i in range(0, len(winners), 2):
+#         if i + 1 >= len(winners):
+#             break
+
+#         match_data = Match(
+#             format=match_data["format"],
+#             date=datetime.now() + timedelta(days=days),
+#             participants=[winners[i], winners[i + 1]],
+#             tournament_id=tournament_id,
+#             tournament_type="Knockout"
+#         )
+
+#         if not await match_service.create(match_data):
+#             return False
+#         days += 1
+
+#     return True
+
+async def advance_knockout_tournament(tournament_id: int) -> bool:
+    """
+    Advances a knockout tournament by finishing current matches, determining winners,
+    and creating new matches for the next round. Declares a winner if only one participant remains.
+    """
     query = """
         SELECT id FROM match 
-        WHERE tournament_id = $1 
-        AND tournament_type = 'Knockout'
+        WHERE tournament_id = $1 AND finished = False AND tournament_type = 'Knockout'
     """
     matches = await DatabaseConnection.read_query(query, tournament_id)
 
+    if not matches:
+        print(f"No ongoing matches for tournament {tournament_id}.")
+        return False
+
+    update_query = """
+        UPDATE match 
+        SET finished = True 
+        WHERE tournament_id = $1 AND tournament_type = 'Knockout' AND finished = False
+    """
+    await DatabaseConnection.update_query(update_query, tournament_id)
+
     winners = []
+   
     for match in matches:
         match_data = await match_service.get_match_with_scores(match[0])
         if not match_data:
-            continue
+            continue  
 
+       
         participant_scores = [p.split('-') for p in match_data["participants"]]
-        winner = max(participant_scores, key=lambda x: int(x[1]))
-        winners.append(winner[0])
+        winner = max(participant_scores, key=lambda x: int(x[1]))[0]
+        winners.append(winner)
 
+    
+    if len(winners) == 1:
+        print(f"Tournament {tournament_id} has concluded. Winner: {winners[0]}")
+        return 'finished'
 
-    days = 1
+    if len(winners) < 2:
+        print(f"Tournament {tournament_id} cannot proceed with fewer than 2 participants.")
+        return True  
+
+    date_string = match_data["date"]    
+    date = datetime.fromisoformat(date_string) 
+    days = 1  
     for i in range(0, len(winners), 2):
         if i + 1 >= len(winners):
-            break
+            break  
+        
 
         match_data = Match(
-            format=match_data["format"],
-            date=datetime.now() + timedelta(days=days),
+            format=match_data["format"],  
+            date=date + timedelta(days=days),
             participants=[winners[i], winners[i + 1]],
             tournament_id=tournament_id,
             tournament_type="Knockout"
         )
 
+       
         if not await match_service.create(match_data):
+            print(f"Failed to create a match for participants {winners[i]} and {winners[i + 1]}")
             return False
-        days += 1
+
+        days += 1 
 
     return True
+
 
 
 

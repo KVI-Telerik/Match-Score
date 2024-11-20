@@ -155,6 +155,7 @@ async def get_match_with_scores(match_id: int) -> Optional[Dict]:
                 m.date,
                 m.tournament_id,
                 m.tournament_type,
+                m.finished,
                 pp.full_name,
                 COALESCE(mp.score, 0) as score
             FROM match m
@@ -171,10 +172,11 @@ async def get_match_with_scores(match_id: int) -> Optional[Dict]:
     match = {
         "id": results[0][0],
         "format": results[0][1],
-        "date": results[0][2],
+        "date": results[0][2].strftime("%Y-%m-%d %H:%M"),
         "tournament_id": results[0][3],
         "tournament_type": results[0][4],
-        "participants": [f"{row[5]}-{row[6]}" for row in results]
+        "finished": results[0][5],
+        "participants": [f"{row[6]}-{row[7]}" for row in results]
     }
 
     return match

@@ -76,6 +76,7 @@ class Match(BaseModel):
         default=None,
         description="Type of tournament if match is part of a tournament"
     )
+    finished : Optional[bool] = Field(False, description="Whether the match has been played and finished")
 
     @field_validator('date')
     def date_not_in_past(cls, v: datetime) -> datetime:
@@ -100,7 +101,7 @@ class Match(BaseModel):
             raise ValueError("Format must be either 'Time limited' or 'Score limited'")
         return v
     @classmethod
-    def from_query_result(cls, id, format, date, participants, tournament_id, tournament_type):
+    def from_query_result(cls, id, format, date, participants, tournament_id, tournament_type, finished):
         participants_list = participants if isinstance(participants, list) else []
         return cls(
             id=id,
@@ -108,7 +109,9 @@ class Match(BaseModel):
             date=date,
             participants=participants_list,
             tournament_id=tournament_id,
-            tournament_type=tournament_type
+            tournament_type=tournament_type,
+            finished=finished
+
         )
     
 

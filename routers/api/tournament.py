@@ -42,10 +42,13 @@ async def next_round(tournament_id:int,token: str = Header(None)):
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Admin or director access required"
             )
-        success = await tournament_service.advance_knockout_tournament(tournament_id)
-        if not success:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to advance tournament"
-            )
-        return {"message": "Tournament is proceeding to next stage!"}
+    success = await tournament_service.advance_knockout_tournament(tournament_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to advance tournament"
+        )
+    
+    if success == "finished":
+        return {"message": "Tournament is finished!"}
+    return {"message": "Tournament is proceeding to next stage!"}
