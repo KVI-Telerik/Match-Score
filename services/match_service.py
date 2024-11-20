@@ -146,54 +146,38 @@ async def get_by_id(match_id: int) -> Optional[Match]:
         participants=participants  # Include participants list
     )
 
+
 async def get_match_with_scores(match_id: int) -> Optional[Dict]:
-    """
-    Get detailed match information including players and scores,
-    with the 7th key being 'score' containing the player's name and score.
-    """
-    match = await get_by_id(match_id)
-    if not match:
+    query = """
+            SELECT 
+                m.id,
+                m.format,
+                m.date,
+                m.tournament_id,
+                m.tournament_type,
+                pp.full_name,
+                COALESCE(mp.score, 0) as score
+            FROM match m
+            JOIN match_participants mp ON m.id = mp.match_id
+            JOIN player_profiles pp ON mp.player_profile_id = pp.id
+            WHERE m.id = $1
+        """
+
+    results = await DatabaseConnection.read_query(query, match_id)
+
+    if not results:
         return None
 
-    # Get detailed player information with scores
-    players_query = """
-        SELECT 
-            pp.full_name,
-            mp.score
-        FROM match_participants mp
-        JOIN player_profiles pp ON pp.id = mp.player_profile_id
-        WHERE mp.match_id = $1
-        ORDER BY mp.player_profile_id
-    """
-    
-    players_result = await DatabaseConnection.read_query(players_query, match_id)
-    
-    # Debugging log
-    print(f"Players result: {players_result}")
-    
-    # Reformat player details
-    players = [
-        {
-            "score": {
-                "name": player[0],  # Player's full name
-                "value": player[1]  # Player's score
-            }
-        }
-        for player in players_result
-    ]
-    
-    # Return both the basic match info and detailed player info
-    return {
-        "id": match.id,
-        "format": match.format,
-        "date": match.date.strftime("%Y-%m-%d %H:%M"),
-        "tournament_id": match.tournament_id,
-        "tournament_type": match.tournament_type,
-        "participants": match.participants,
-        "players_details": players  # Only include name and score
+    match = {
+        "id": results[0][0],
+        "format": results[0][1],
+        "date": results[0][2],
+        "tournament_id": results[0][3],
+        "tournament_type": results[0][4],
+        "participants": [f"{row[5]}-{row[6]}" for row in results]
     }
 
-
+    return match
 async def update_score(match_id: int, player_id:int , score:int) -> Optional[Match]:
     match = await get_by_id(match_id)
     if not match:
