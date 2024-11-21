@@ -167,12 +167,12 @@ async def advance_knockout_tournament(tournament_id: int):
 
     
     if len(winners) == 1:
-        print(f"Tournament {tournament_id} has concluded. Winner: {winners[0]}")
-        return 'finished'
+        return f"Tournament {tournament_id} has concluded. Winner: {winners[0]}, Score: {participant_scores[0][1]}:{participant_scores[1][1]}"
+       
 
     if len(winners) < 2:
-        print(f"Tournament {tournament_id} cannot proceed with fewer than 2 participants.")
-        return True  
+        return f"Tournament {tournament_id} cannot proceed with fewer than 2 participants."
+         
 
     date_string = match_data["date"]    
     date = datetime.fromisoformat(date_string) 

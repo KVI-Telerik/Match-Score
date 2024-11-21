@@ -49,6 +49,6 @@ async def next_round(tournament_id:int,token: str = Header(None)):
             detail="Failed to advance tournament"
         )
     
-    if success == "finished":
-        return {"message": "Tournament is finished!"}
+    if success != True:
+        return success
     return {"message": "Tournament is proceeding to next stage!"}
