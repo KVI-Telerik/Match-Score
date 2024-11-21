@@ -215,3 +215,37 @@ async def reschedule_match(match_id: int, new_date: datetime) -> Optional[Match]
         return None
 
     return await get_by_id(match_id)
+
+
+async def match_end_league(match_id: int):
+    query = """
+        UPDATE match
+        SET finished = True
+        WHERE id = $1
+    """
+    success = await DatabaseConnection.update_query(query, match_id)
+    if not success:
+        return None
+    
+    match_data = await get_match_with_scores(match_id)
+       
+    participant_scores = [p.split('-') for p in match_data["participants"]]
+    
+    if participant_scores[0][1] == participant_scores[1][1]:
+        draws = [participant_scores[0][0], participant_scores[1][0]]
+    else:
+        winner = max(participant_scores, key=lambda x: int(x[1]))[0]
+        loser = min(participant_scores, key=lambda x: int(x[1]))[0]
+        winner_obj = str(await player_profile_service.get_player_profile_by_name(winner))
+        loser_obj = str(await player_profile_service.get_player_profile_by_name(loser))
+        winner_id = int(winner_obj.split('id=')[1].split()[0])
+        loser_id = int(loser_obj.split('id=')[1].split()[0])
+        result_query = """
+        UPDATE tournament_participants
+        SET finished = True
+        WHERE id = $1
+        """
+   
+    return f'{winner_id}'
+
+

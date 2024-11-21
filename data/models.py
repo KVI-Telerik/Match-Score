@@ -78,15 +78,15 @@ class Match(BaseModel):
     )
     finished : Optional[bool] = Field(False, description="Whether the match has been played and finished")
 
-    @field_validator('date')
-    def date_not_in_past(cls, v: datetime) -> datetime:
-        if v.tzinfo is not None:
-            v = v.replace(tzinfo=None)
+    # @field_validator('date')
+    # def date_not_in_past(cls, v: datetime) -> datetime:
+    #     if v.tzinfo is not None:
+    #         v = v.replace(tzinfo=None)
 
-        current_time = datetime.now()
-        if v < current_time:
-            raise ValueError("Date of the match cannot be in the past.")
-        return v
+    #     current_time = datetime.now()
+    #     if v < current_time:
+    #         raise ValueError("Date of the match cannot be in the past.")
+    #     return v
 
     @field_validator('participants')
     def validate_participants(cls, v: List[str]) -> List[str]:

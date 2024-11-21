@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Header, status
 from typing import List
 from data.models import Match, PlayerProfile
 from services import match_service
-from services.match_service import create
+from services.match_service import create, match_end_league
 from services.user_service import is_admin, is_director
 
 matches_router = APIRouter(prefix='/api/matches', tags=['matches'])
@@ -69,3 +69,22 @@ async def update_match_score(
             detail="Failed to update match score. Check for missing player or match data."
         )
     return {"message": "Match score updated successfully"}
+
+
+@matches_router.put('/{match_id}/status', status_code=status.HTTP_200_OK)
+async def end_match(match_id: int, token: str = Header(None)):
+
+    if not token or not await is_admin(token):
+        if not await is_director(token):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin or director access required"
+            )
+        
+    success = await match_end_league(match_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Failed to end match."
+        )
+    return success
