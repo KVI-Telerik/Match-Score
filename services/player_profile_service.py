@@ -51,3 +51,28 @@ async def create(player_profile: PlayerProfile):
         player_profile.draws
 
     )
+
+async def update(id, player_profile: PlayerProfile):
+    query = """
+        UPDATE player_profiles
+        SET country = $1, sports_club = $2 
+        WHERE id = $6
+    """
+
+    updated_profile =  await DatabaseConnection.update_query(
+        query,
+        player_profile.country,
+        player_profile.sports_club,
+        id
+    )
+
+    return updated_profile
+
+async def get_by_id(player_profile_id: int) -> Optional[PlayerProfile]:
+    query = """
+        SELECT id, full_name, country, sports_club, wins, losses, draws
+        FROM player_profiles
+        WHERE id = $1
+    """
+    results = await DatabaseConnection.read_query(query, player_profile_id)
+    return PlayerProfile.from_query_result(*results[0]) if results else None
