@@ -216,10 +216,6 @@ async def finsh_league_tournament(tournament_id: int):
     """
     await DatabaseConnection.update_query(update_query, tournament_id)
     
-        
-
-
-
 
 
 

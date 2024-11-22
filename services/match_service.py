@@ -7,6 +7,15 @@ from datetime import datetime
 
 
 
+async def get_tournament_by_match_id(match_id: int):
+    query = """
+    SELECT tournament_id 
+    FROM match
+    WHERE id = $1
+    """
+    tournament_id = await DatabaseConnection.read_query(query, match_id)
+    return int(tournament_id[0][0])
+
 
 async def create_player_profile(name: str) -> Optional[PlayerProfile]:
 
@@ -119,7 +128,7 @@ async def get_by_id(match_id: int) -> Optional[Match]:
     if not match_result:
         return None
         
-    # Get players and scores
+   
     players_query = """
         SELECT 
             pp.full_name
@@ -131,19 +140,19 @@ async def get_by_id(match_id: int) -> Optional[Match]:
     
     players_result = await DatabaseConnection.read_query(players_query, match_id)
     
-    # Extract match data
+    
     match_data = match_result[0]
-    # Extract player names into a list
+    
     participants = [row[0] for row in players_result]
     
-    # Create Match object with all required fields
+   
     return Match(
         id=match_data[0],
         format=match_data[1],
         date=match_data[2],
         tournament_id=match_data[3],
         tournament_type=match_data[4],
-        participants=participants  # Include participants list
+        participants=participants  
     )
 
 
@@ -217,7 +226,7 @@ async def reschedule_match(match_id: int, new_date: datetime) -> Optional[Match]
     return await get_by_id(match_id)
 
 
-async def match_end_league(match_id: int):
+async def match_end_league(match_id: int, tournament_id: int):
     query = """
         UPDATE match
         SET finished = True
@@ -233,6 +242,19 @@ async def match_end_league(match_id: int):
     
     if participant_scores[0][1] == participant_scores[1][1]:
         draws = [participant_scores[0][0], participant_scores[1][0]]
+        draw_query = """
+        UPDATE tournament_participants
+        SET draws = draws + 1
+        WHERE player_profile_id IN ($1, $2) AND tournament_id = $3;
+        """
+        p1_obj = str(await player_profile_service.get_player_profile_by_name(draws[0]))
+        p2_obj = str(await player_profile_service.get_player_profile_by_name(draws[1]))
+        p1_id = int(p1_obj.split('id=')[1].split()[0])
+        p2_id = int(p2_obj.split('id=')[1].split()[0])
+
+        await DatabaseConnection.update_query(draw_query, p1_id, p2_id, tournament_id )
+        return f'Match ended at a draw between {draws[0]} and {draws[1]}'
+
     else:
         winner = max(participant_scores, key=lambda x: int(x[1]))[0]
         loser = min(participant_scores, key=lambda x: int(x[1]))[0]
@@ -240,12 +262,20 @@ async def match_end_league(match_id: int):
         loser_obj = str(await player_profile_service.get_player_profile_by_name(loser))
         winner_id = int(winner_obj.split('id=')[1].split()[0])
         loser_id = int(loser_obj.split('id=')[1].split()[0])
-        result_query = """
+        winner_query = """
         UPDATE tournament_participants
-        SET finished = True
-        WHERE id = $1
+        SET wins = wins + 1
+        WHERE player_profile_id = $1 AND tournament_id = $2
         """
+        await DatabaseConnection.update_query(winner_query, winner_id, tournament_id)
+        loser_query = """
+        UPDATE tournament_participants
+        SET losses = losses + 1
+        WHERE player_profile_id = $1 AND tournament_id = $2
+        """
+        await DatabaseConnection.update_query(loser_query, loser_id, tournament_id)
+        return f'Match ended. Winner: {winner}'
    
-    return f'{winner_id}'
+    
 
 

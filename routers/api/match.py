@@ -71,8 +71,9 @@ async def update_match_score(
     return {"message": "Match score updated successfully"}
 
 
-@matches_router.put('/{match_id}/status', status_code=status.HTTP_200_OK)
+@matches_router.put('/leagues/{match_id}/status', status_code=status.HTTP_200_OK)
 async def end_match(match_id: int, token: str = Header(None)):
+    tournament_id = await match_service.get_tournament_by_match_id(match_id)
 
     if not token or not await is_admin(token):
         if not await is_director(token):
@@ -81,7 +82,7 @@ async def end_match(match_id: int, token: str = Header(None)):
                 detail="Admin or director access required"
             )
         
-    success = await match_end_league(match_id)
+    success = await match_end_league(match_id, tournament_id)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
