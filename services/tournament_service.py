@@ -224,10 +224,29 @@ async def get_league_standings(tournament_id: int):
     WHERE tournament_id = $1
     ORDER BY points DESC
     """
-    #[(39, 0, 0, 0, 0), (38, 0, 2, 2, 1), (37, 0, 0, 2, 1), (16, 2, 0, 0, 3)]
     result = await DatabaseConnection.read_query(query, tournament_id)
+    if not result:
+        return None
+
+    standings = []
+    for row in result:
+        standings.append({
+            "Player": await get_names_by_id(row[0]),
+            "Points": row[4],
+            "Wins": row[1],
+            "Losses": row[2],
+            "Draws": row[3]
+        })
+    
+    return standings
     
 
 
-
-
+async def get_names_by_id(player_profile_id: int):
+    query = """
+    SELECT full_name
+    FROM player_profiles
+    WHERE id = $1
+    """
+    result = await DatabaseConnection.read_query(query, player_profile_id)
+    return str(result[0][0])
