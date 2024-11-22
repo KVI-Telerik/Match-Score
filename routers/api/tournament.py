@@ -59,6 +59,14 @@ async def todotodo():
     pass
 
 
-@tournaments_router.get('/{id}/standings', status_code=status.HTTP_200_OK)
-async def get_standings():
-    pass
+@tournaments_router.get('league/{tournament_id}/standings', status_code=status.HTTP_200_OK)
+async def get_standings(tournament_id: int):
+    tournament = await tournament_service.get_league_standings(tournament_id)
+
+    if not tournament:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tournament not found"
+        )
+    return tournament
+    

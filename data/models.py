@@ -157,15 +157,17 @@ class TournamentParticipants(BaseModel):
     wins: Optional[int]
     losses: Optional[int]
     draws: Optional[int]
+    points: Optional[int]
 
     @classmethod
-    def from_query_result(cls, tournament_id, player_profile_id, wins, losses, draws):
+    def from_query_result(cls, tournament_id, player_profile_id, wins, losses, draws, points):
         return cls(
             tournament_id=tournament_id,
             player_profile_id=player_profile_id,
             wins=wins,
             losses=losses,
-            draws=draws
+            draws=draws,
+            points=points
 
         )
 

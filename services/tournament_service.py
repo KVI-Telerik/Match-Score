@@ -215,7 +215,19 @@ async def finsh_league_tournament(tournament_id: int):
         WHERE tournament_id = $1 AND tournament_type = 'League' AND finished = False
     """
     await DatabaseConnection.update_query(update_query, tournament_id)
+
+
+async def get_league_standings(tournament_id: int):
+    query = """
+    SELECT player_profile_id, wins, losses, draws, points
+    FROM tournament_participants
+    WHERE tournament_id = $1
+    ORDER BY points DESC
+    """
+    #[(39, 0, 0, 0, 0), (38, 0, 2, 2, 1), (37, 0, 0, 2, 1), (16, 2, 0, 0, 3)]
+    result = await DatabaseConnection.read_query(query, tournament_id)
     
+
 
 
 

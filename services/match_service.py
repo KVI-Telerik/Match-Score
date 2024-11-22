@@ -244,7 +244,8 @@ async def match_end_league(match_id: int, tournament_id: int):
         draws = [participant_scores[0][0], participant_scores[1][0]]
         draw_query = """
         UPDATE tournament_participants
-        SET draws = draws + 1
+        SET draws = draws + 1, 
+        points = points + 1
         WHERE player_profile_id IN ($1, $2) AND tournament_id = $3;
         """
         p1_obj = str(await player_profile_service.get_player_profile_by_name(draws[0]))
@@ -264,7 +265,8 @@ async def match_end_league(match_id: int, tournament_id: int):
         loser_id = int(loser_obj.split('id=')[1].split()[0])
         winner_query = """
         UPDATE tournament_participants
-        SET wins = wins + 1
+        SET wins = wins + 1,
+        points = points + 3
         WHERE player_profile_id = $1 AND tournament_id = $2
         """
         await DatabaseConnection.update_query(winner_query, winner_id, tournament_id)
