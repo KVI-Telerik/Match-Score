@@ -199,22 +199,22 @@ async def advance_knockout_tournament(tournament_id: int):
 
     return True
 
-async def finsh_league_tournament(tournament_id: int):
-    query = """
-        SELECT id FROM match 
-        WHERE tournament_id = $1 AND finished = False AND tournament_type = 'League'
-    """
-    matches = await DatabaseConnection.read_query(query, tournament_id)
+# async def finsh_league_tournament(tournament_id: int):
+#     query = """
+#         SELECT id FROM match 
+#         WHERE tournament_id = $1 AND finished = False AND tournament_type = 'League'
+#     """
+#     matches = await DatabaseConnection.read_query(query, tournament_id)
 
-    if not matches:
-        return f"No ongoing matches for tournament {tournament_id}."
+#     if not matches:
+#         return f"No ongoing matches for tournament {tournament_id}."
     
-    update_query = """
-        UPDATE match 
-        SET finished = True 
-        WHERE tournament_id = $1 AND tournament_type = 'League' AND finished = False
-    """
-    await DatabaseConnection.update_query(update_query, tournament_id)
+#     update_query = """
+#         UPDATE match 
+#         SET finished = True 
+#         WHERE tournament_id = $1 AND tournament_type = 'League' AND finished = False
+#     """
+#     await DatabaseConnection.update_query(update_query, tournament_id)
 
 
 async def get_league_standings(tournament_id: int):

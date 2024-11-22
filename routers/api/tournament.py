@@ -54,9 +54,9 @@ async def next_round(tournament_id:int,token: str = Header(None)):
     return {"message": "Tournament is proceeding to next stage!"}
 
 
-@tournaments_router.post('/{id}/league_winner', status_code=status.HTTP_200_OK)
-async def todotodo():
-    pass
+# @tournaments_router.post('/{id}/league_winner', status_code=status.HTTP_200_OK)
+# async def todotodo():
+#     pass
 
 
 @tournaments_router.get('league/{tournament_id}/standings', status_code=status.HTTP_200_OK)
