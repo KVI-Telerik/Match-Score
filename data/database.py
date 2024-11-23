@@ -1,6 +1,8 @@
 import asyncpg
+import database_info as db
 from typing import List, Any, Optional, Union
 from contextlib import asynccontextmanager
+
 
 class DatabaseConnection:
     _pool: Optional[asyncpg.Pool] = None
@@ -10,11 +12,11 @@ class DatabaseConnection:
         if cls._pool is None:
             try:
                 cls._pool = await asyncpg.create_pool(
-                    user='match-score_owner',
-                    password='3qem5dgbONsA',
-                    host='ep-broad-morning-a2defk2e.eu-central-1.aws.neon.tech',
-                    port=5432,
-                    database='match-score',
+                    user=db.DB_USER,
+                    password=db.DB_PASSWORD,
+                    host=db.DB_HOST,
+                    port=db.DB_PORT,
+                    database=db.DB_DATABASE,
                     min_size=1,
                     max_size=10  # Adjust based on your needs
                 )
