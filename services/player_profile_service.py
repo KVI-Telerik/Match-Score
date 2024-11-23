@@ -1,7 +1,7 @@
 from typing import Optional
 
 from data.database import DatabaseConnection
-from data.models import PlayerProfile
+from data.models import PlayerProfile, UpdateProfile
 
 
 async def get_player_profile_by_name(full_name: str) -> Optional[PlayerProfile]:
@@ -52,21 +52,27 @@ async def create(player_profile: PlayerProfile):
 
     )
 
-async def update(id, player_profile: PlayerProfile):
+async def update(id: int, player_profile: UpdateProfile):
+    existing_profile = await DatabaseConnection.read_query(
+        "SELECT country, sports_club FROM player_profiles WHERE id = $1",
+        id
+    )
+    if not existing_profile:
+        return None
+
+    current_country, current_sports_club = existing_profile[0]
+    country = player_profile.country if player_profile.country is not None else current_country
+    sports_club = player_profile.sports_club if player_profile.sports_club is not None else current_sports_club
+
     query = """
         UPDATE player_profiles
         SET country = $1, sports_club = $2 
-        WHERE id = $6
+        WHERE id = $3
     """
+    await DatabaseConnection.update_query(query, country, sports_club, id)
 
-    updated_profile =  await DatabaseConnection.update_query(
-        query,
-        player_profile.country,
-        player_profile.sports_club,
-        id
-    )
+    return {"id": id, "country": country, "sports_club": sports_club}
 
-    return updated_profile
 
 async def get_by_id(player_profile_id: int) -> Optional[PlayerProfile]:
     query = """
@@ -76,3 +82,12 @@ async def get_by_id(player_profile_id: int) -> Optional[PlayerProfile]:
     """
     results = await DatabaseConnection.read_query(query, player_profile_id)
     return PlayerProfile.from_query_result(*results[0]) if results else None
+
+async def get_user_id(player_profile_id: int):
+    query = """
+        SELECT id
+        FROM users
+        WHERE player_profile_id = $1
+    """
+    results = await DatabaseConnection.read_query(query, player_profile_id)
+    return results[0][0] if results else None

@@ -204,3 +204,7 @@ class Requests(BaseModel):
             player_profile_id=player_profile_id,
             approved_or_denied=approved_or_denied,
         )
+
+class UpdateProfile(BaseModel):
+    country: Optional[str]
+    sports_club: Optional[str]

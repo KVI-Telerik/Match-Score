@@ -1,6 +1,6 @@
 
 from fastapi import APIRouter, HTTPException, status, Header
-from data.models import User, UserLogin, PlayerProfile
+from data.models import PlayerProfile,UpdateProfile
 from services import player_profile_service, user_service
 from services.user_service import ALGORITHM, SECRET_KEY, create_user, login_user, is_admin
 from jose import jwt
@@ -39,10 +39,10 @@ async def create_profile(
     return {"message": "player registered successfully"}
 
 
-@players_profiles_router.patch('/{id}', status_code=status.HTTP_200_OK)
+@players_profiles_router.patch('/{player_profile_id}', status_code=status.HTTP_200_OK)
 async def update_profile(
-    id: int,  # The ID of the profile to update
-    player_profile_data: PlayerProfile,
+    player_profile_id: int,  # The ID of the profile to update
+    player_profile_data: UpdateProfile,
     token: str = Header(None)
 ):
     if not token:
@@ -81,19 +81,19 @@ async def update_profile(
         )
 
     # Fetch the player profile to update
-    player_profile = await player_profile_service.get_by_id(id)
+    player_profile = await player_profile_service.get_by_id(player_profile_id)
     if not player_profile:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Player profile not found"
         )
 
-    # Use check_linked_user to determine if the player profile is linked to a user
-    linked_player_profile_id = await user_service.check_linked_user(user.id)
+    # Check if the profile is linked to another user
+    profile_linked_user_id = await player_profile_service.get_user_id(player_profile_id)
 
-    if linked_player_profile_id:
+    if profile_linked_user_id:
         # If the profile is linked, only the linked user can update it
-        if linked_player_profile_id != id:
+        if profile_linked_user_id != user_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have permission to edit this profile"
@@ -107,7 +107,7 @@ async def update_profile(
             )
 
     # Perform the update
-    updated_player_profile = await player_profile_service.update(id,player_profile_data)
+    updated_player_profile = await player_profile_service.update(player_profile_id, player_profile_data)
     if not updated_player_profile:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
