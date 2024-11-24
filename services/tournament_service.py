@@ -37,6 +37,87 @@ async def create(tournament_data: Tournament, participants: List[str]) -> Option
     #     await DatabaseConnection.update_query("DELETE FROM tournament WHERE id=$1", tournament_id)
 
 
+async def get_all():
+    query = '''
+    SELECT t.id, t.title, t.format, t.match_format, t.prize, p.full_name
+    FROM tournament t
+    LEFT JOIN tournament_participants tp ON t.id = tp.tournament_id
+    LEFT JOIN player_profiles p ON tp.player_profile_id = p.id
+    '''
+    result = await DatabaseConnection.read_query(query)
+    if not result:
+        return None
+    
+    result_dict = {}
+    for row in result:
+        if row[0] not in result_dict:
+            result_dict[row[0]] = {
+                "id": row[0],
+                "title": row[1],
+                "format": row[2],
+                "match_format": row[3],
+                "prize": row[4],
+                "participants": []
+            }
+        if row[5]:
+            result_dict[row[0]]["participants"].append(row[5])
+    
+    return list(result_dict.values())
+
+async def get_by_id(tournament_id: int) -> Optional[Dict]:
+    query = '''
+        SELECT 
+            t.id, 
+            t.title, 
+            t.format, 
+            t.match_format, 
+            t.prize, 
+            m.id AS match_id, 
+            m.format AS match_format, 
+            m.date AS match_date, 
+            m.tournament_type, 
+            pp.full_name AS participant_name, 
+            COALESCE(mp.score, 0) AS participant_score
+        FROM tournament t
+        LEFT JOIN match m ON t.id = m.tournament_id
+        LEFT JOIN match_participants mp ON m.id = mp.match_id
+        LEFT JOIN player_profiles pp ON mp.player_profile_id = pp.id
+        WHERE t.id = $1
+        ORDER BY m.date
+    '''
+    result = await DatabaseConnection.read_query(query, tournament_id)
+    if not result:
+        return None
+
+    tournament_info = {
+        "id": result[0][0],
+        "title": result[0][1],
+        "format": result[0][2],
+        "match_format": result[0][3],
+        "prize": result[0][4],
+        "matches": []
+    }
+
+    matches = {}
+    for row in result:
+        match_id = row[5]
+        if match_id:
+            if match_id not in matches:
+                matches[match_id] = {
+                    "id": match_id,
+                    "format": row[6],
+                    "date": row[7].strftime("%Y-%m-%d %H:%M"),
+                    "tournament_type": row[8],
+                    "participants": []
+                }
+            participant_info = f"{row[9]} {row[10]}"
+            matches[match_id]["participants"].append(participant_info)
+
+    tournament_info["matches"] = list(matches.values())
+
+    return tournament_info
+
+
 async def create_knockout_matches(tournament_id, participants: List[str], match_format:str):
 
     participant_profiles = []

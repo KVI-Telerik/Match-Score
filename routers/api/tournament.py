@@ -54,12 +54,9 @@ async def next_round(tournament_id:int,token: str = Header(None)):
     return {"message": "Tournament is proceeding to next stage!"}
 
 
-# @tournaments_router.post('/{id}/league_winner', status_code=status.HTTP_200_OK)
-# async def todotodo():
-#     pass
 
 
-@tournaments_router.get('league/{tournament_id}/standings', status_code=status.HTTP_200_OK)
+@tournaments_router.get('/league/{tournament_id}/standings', status_code=status.HTTP_200_OK)
 async def get_standings(tournament_id: int):
     tournament = await tournament_service.get_league_standings(tournament_id)
 
@@ -69,4 +66,26 @@ async def get_standings(tournament_id: int):
             detail="Tournament not found"
         )
     return tournament
+
+@tournaments_router.get('/')
+async def get_tournaments():
+    tournaments = await tournament_service.get_all()
+    if not tournaments:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No tournaments found"
+        )
+    return tournaments
+
+@tournaments_router.get('/{id}')
+async def get_tournament(id: int):
+    tournament = await tournament_service.get_by_id(id)
+    if not tournament:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tournament not found"
+        )
+    return tournament
+
+    
     
