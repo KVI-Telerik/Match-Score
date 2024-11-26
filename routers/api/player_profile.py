@@ -1,8 +1,11 @@
 
 from fastapi import APIRouter, HTTPException, status, Header
+from starlette.status import HTTP_200_OK
+
 from data.models import PlayerProfile,UpdateProfile
-from services import player_profile_service, user_service
-from services.user_service import ALGORITHM, SECRET_KEY, create_user, login_user, is_admin
+from services import player_profile_service,user_service
+
+# from services.user_service import ALGORITHM, SECRET_KEY, create_user, login_user, is_admin
 from jose import jwt
 
 players_profiles_router = APIRouter(prefix='/api/player_profiles', tags=['player_profiles'])
@@ -22,7 +25,7 @@ async def create_profile(
         )
 
 
-    is_admin_user = await is_admin(token)
+    is_admin_user = await user_service.is_admin(token)
     if not is_admin_user:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -53,7 +56,7 @@ async def update_profile(
 
     # Decode and validate the token
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, user_service.SECRET_KEY, algorithms=[user_service.ALGORITHM])
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -115,3 +118,36 @@ async def update_profile(
         )
 
     return {"message": "Player profile updated successfully"}
+
+@players_profiles_router.delete('/{player_profile_id}', status_code=status.HTTP_200_OK)
+async def delete_profile(
+    player_profile_id: int,
+    token: str = Header(None)
+):
+    """Delete a player profile"""
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authorization token is missing"
+        )
+
+    is_admin_user = await user_service.is_admin(token)
+    if not is_admin_user:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+
+    success = await player_profile_service.delete_player_profile(player_profile_id)
+    if success is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Player profile not found"
+        )
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Deletion unsuccessful"
+        )
+
+    return {"message": "Player deleted successfully"}

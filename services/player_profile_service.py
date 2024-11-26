@@ -2,6 +2,7 @@ from typing import Optional
 
 from data.database import DatabaseConnection
 from data.models import PlayerProfile, UpdateProfile
+from routers.api.player_profile import players_profiles_router
 
 
 async def get_player_profile_by_name(full_name: str) -> Optional[PlayerProfile]:
@@ -91,3 +92,64 @@ async def get_user_id(player_profile_id: int):
     """
     results = await DatabaseConnection.read_query(query, player_profile_id)
     return results[0][0] if results else None
+
+async def check_linked_player_profile(player_profile_id: int):
+    query = """
+        SELECT id
+        FROM users
+        WHERE player_profile_id = $1
+    """
+    user_id = await DatabaseConnection.read_query(query, player_profile_id)
+    return user_id[0][0] if user_id else None
+
+async def delete_player_profile(player_profile_id: int):
+
+
+    check_query = """
+        SELECT id FROM player_profiles WHERE id = $1
+    """
+    profile = await DatabaseConnection.read_query(check_query, player_profile_id)
+    if not profile:
+        return None
+
+    linked = await check_linked_player_profile(player_profile_id)
+    if linked:
+        return None
+
+    try:
+
+        await DatabaseConnection.update_query("""
+            DELETE FROM match_participants 
+            WHERE player_profile_id = $1
+        """, player_profile_id)
+
+
+        await DatabaseConnection.update_query("""
+            DELETE FROM tournament_participants 
+            WHERE player_profile_id = $1
+        """, player_profile_id)
+
+
+        await DatabaseConnection.update_query("""
+            DELETE FROM requests 
+            WHERE player_profile_id = $1
+        """, player_profile_id)
+
+
+        await DatabaseConnection.update_query("""
+            UPDATE users 
+            SET player_profile_id = NULL 
+            WHERE player_profile_id = $1
+        """, player_profile_id)
+
+
+        success = await DatabaseConnection.update_query("""
+            DELETE FROM player_profiles 
+            WHERE id = $1
+        """, player_profile_id)
+
+        return success
+
+    except Exception as e:
+        print(f"Error during player profile deletion: {str(e)}")
+        return False

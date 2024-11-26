@@ -210,11 +210,3 @@ async def approve_director_claim(id):
     else:
         return status
     
-async def check_linked_user(user_id: int):
-    query = """
-        SELECT player_profile_id
-        FROM users
-        WHERE id = $1
-    """
-    user_id = await DatabaseConnection.read_query(query, user_id)
-    return user_id[0][0] if user_id else None

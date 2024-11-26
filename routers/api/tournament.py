@@ -35,7 +35,7 @@ async def create_tournament(
     return tournament
 
 @tournaments_router.post('/{id}/next_round',status_code=status.HTTP_201_CREATED)
-async def next_round(tournament_id:int,token: str = Header(None)):
+async def next_round_knockout(tournament_id:int,token: str = Header(None)):
     if not token or not await is_admin(token):
         if not await is_director(token):
             raise HTTPException(
