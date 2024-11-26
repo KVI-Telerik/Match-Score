@@ -1,6 +1,6 @@
 
 from fastapi import APIRouter, HTTPException, status, Header
-from starlette.status import HTTP_200_OK
+
 
 from data.models import PlayerProfile,UpdateProfile
 from services import player_profile_service,user_service
@@ -54,19 +54,7 @@ async def update_profile(
             detail="Authorization token is missing"
         )
 
-    # Decode and validate the token
-    try:
-        payload = jwt.decode(token, user_service.SECRET_KEY, algorithms=[user_service.ALGORITHM])
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has expired"
-        )
-    except jwt.JWTError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
-        )
+    payload = jwt.decode(token, user_service.SECRET_KEY, algorithms=[user_service.ALGORITHM])
 
     user_id = payload.get("id")
     if not user_id:
@@ -75,7 +63,7 @@ async def update_profile(
             detail="Invalid token payload"
         )
 
-    # Fetch the user making the request
+
     user = await user_service.get_user_by_id(user_id)
     if not user:
         raise HTTPException(
@@ -83,7 +71,7 @@ async def update_profile(
             detail="User not found"
         )
 
-    # Fetch the player profile to update
+
     player_profile = await player_profile_service.get_by_id(player_profile_id)
     if not player_profile:
         raise HTTPException(
@@ -91,25 +79,25 @@ async def update_profile(
             detail="Player profile not found"
         )
 
-    # Check if the profile is linked to another user
+
     profile_linked_user_id = await player_profile_service.get_user_id(player_profile_id)
 
     if profile_linked_user_id:
-        # If the profile is linked, only the linked user can update it
+
         if profile_linked_user_id != user_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You do not have permission to edit this profile"
             )
     else:
-        # If the profile is not linked, only directors can update it
+
         if not user.is_director:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only directors can edit unlinked profiles"
             )
 
-    # Perform the update
+
     updated_player_profile = await player_profile_service.update(player_profile_id, player_profile_data)
     if not updated_player_profile:
         raise HTTPException(
