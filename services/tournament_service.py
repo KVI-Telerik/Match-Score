@@ -37,17 +37,27 @@ async def create(tournament_data: Tournament, participants: List[str]) -> Option
     #     await DatabaseConnection.update_query("DELETE FROM tournament WHERE id=$1", tournament_id)
 
 
-async def get_all():
+async def get_all(search: Optional[str] = None) -> List[dict]:
     query = '''
     SELECT t.id, t.title, t.format, t.match_format, t.prize, p.full_name
     FROM tournament t
     LEFT JOIN tournament_participants tp ON t.id = tp.tournament_id
     LEFT JOIN player_profiles p ON tp.player_profile_id = p.id
     '''
-    result = await DatabaseConnection.read_query(query)
+
+
+    if search:
+        query += '''
+        WHERE LOWER(t.title) LIKE LOWER($1)
+        '''
+        search_pattern = f'%{search}%'
+        result = await DatabaseConnection.read_query(query, search_pattern)
+    else:
+        result = await DatabaseConnection.read_query(query)
+
     if not result:
         return None
-    
+
     result_dict = {}
     for row in result:
         if row[0] not in result_dict:
@@ -61,7 +71,7 @@ async def get_all():
             }
         if row[5]:
             result_dict[row[0]]["participants"].append(row[5])
-    
+
     return list(result_dict.values())
 
 async def get_by_id(tournament_id: int) -> Optional[Dict]:

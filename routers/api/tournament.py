@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException, Header, status
-from typing import List
+from fastapi import APIRouter, HTTPException, Header, status, Query
+from typing import List, Optional
 from data.models import Tournament, PlayerProfile
 from services import tournament_service
 from services.user_service import is_admin, is_director
@@ -68,14 +68,16 @@ async def get_standings(tournament_id: int):
     return tournament
 
 @tournaments_router.get('/')
-async def get_tournaments():
-    tournaments = await tournament_service.get_all()
+async def get_tournaments(search: Optional[str] = Query(None, description="Search tournaments by title")):
+    """Get all tournaments with optional title search"""
+    tournaments = await tournament_service.get_all(search)
     if not tournaments:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="No tournaments found"
         )
     return tournaments
+
 
 @tournaments_router.get('/{id}')
 async def get_tournament(id: int):
