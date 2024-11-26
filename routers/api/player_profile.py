@@ -139,3 +139,25 @@ async def delete_profile(
         )
 
     return {"message": "Player deleted successfully"}
+
+@players_profiles_router.get('/', status_code=status.HTTP_200_OK)
+async def get_all_profiles(search: str = None):
+    """Get all player profiles"""
+    if search:
+        profiles = await player_profile_service.get_all(search)
+    else:
+        profiles = await player_profile_service.get_all()
+    
+    return profiles
+
+@players_profiles_router.get('/{player_profile_id}', status_code=status.HTTP_200_OK)
+async def get_profile(player_profile_id: int):
+    """Get a player profile by ID"""
+    profile = await player_profile_service.get_profile_by_id(player_profile_id)
+    if not profile:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Player profile not found"
+        )
+
+    return profile

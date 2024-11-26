@@ -153,3 +153,41 @@ async def delete_player_profile(player_profile_id: int):
     except Exception as e:
         print(f"Error during player profile deletion: {str(e)}")
         return False
+
+async def get_all(search: str = None):
+    query = """
+        SELECT id, full_name, country, sports_club, wins, losses, draws
+        FROM player_profiles
+    """
+    if search:
+        query += f" WHERE full_name LIKE '%{search}%'"
+
+    results = await DatabaseConnection.read_query(query)
+    return [PlayerProfile.from_query_result(*result) for result in results] if results else []
+
+async def get_profile_by_id(player_profile_id: int):
+    query = """
+        SELECT pp.id, pp.full_name, pp.country, pp.sports_club, pp.wins, pp.losses, pp.draws, 
+                t.title as tournament_name
+        FROM player_profiles pp
+        LEFT JOIN tournament_participants tp ON pp.id = tp.player_profile_id
+        LEFT JOIN tournament t ON tp.tournament_id = t.id
+        WHERE pp.id = $1
+    """
+
+    results = await DatabaseConnection.read_query(query, player_profile_id)
+    if not results:
+        return None
+
+    profile_data = results[0]
+    player_profile_result = {
+        "id": profile_data[0],
+        "full_name": profile_data[1],
+        "country": profile_data[2],
+        "sports_club": profile_data[3] if profile_data[3] else "N/A",
+        "wins": profile_data[4],
+        "losses": profile_data[5],
+        "draws": profile_data[6],
+        "tournaments": profile_data[7::] if  profile_data[7] else "N/A"
+    }
+    return player_profile_result
