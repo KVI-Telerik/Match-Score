@@ -43,7 +43,7 @@ async def claim_player_profile(token: str = Header(None)):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Player profile with such name can`t be claimed or does not exist"
-        )
+        )    
     return {"message": "awaiting approval"}
 
 

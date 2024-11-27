@@ -4,6 +4,8 @@ from data.database import DatabaseConnection
 from services import player_profile_service
 from datetime import datetime
 
+from services.notification_service import notify_user_added_to_event
+
 
 
 
@@ -86,6 +88,11 @@ async def create(match_data: Match) -> Optional[Match]:
             return None
 
     match_data.id = match_id
+    for profile in participant_profiles:
+        user_data = await DatabaseConnection.read_query("SELECT id, last_name,email FROM users WHERE player_profile_id = $1", profile.id)  
+        if user_data:
+            await notify_user_added_to_event(user_data, "match", match_data.date)
+
     return match_data
 
 

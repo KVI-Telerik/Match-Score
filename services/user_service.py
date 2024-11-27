@@ -1,7 +1,8 @@
 from fastapi import HTTPException, Header
 from passlib.context import CryptContext
 from starlette import status
-
+from dotenv import load_dotenv
+import os
 # from common.auth_middleware import validate_token
 from data.database import DatabaseConnection
 from data.models import Requests, User
@@ -11,10 +12,14 @@ from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Union
 
 from services.player_profile_service import get_player_profile_by_name
+from services.notification_service import notify_user_request_handled
 
+load_dotenv()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = "6a631f3a77008d5586d9ecc2ca7bea47695d575b5e6195dd6ca200829a8ae40c"
-ALGORITHM = "HS256"
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
+
+
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 async def all_users() -> List[User]:
@@ -186,9 +191,21 @@ async def approve_player_claim(id):
         AND r.id = $1
         """
         result = await DatabaseConnection.update_query(query, id)
+
+        
+        if result:
+            user_data = await DatabaseConnection.read_query(
+                "SELECT u.id, u.last_name, u.email FROM users u JOIN requests r ON u.id = r.user_id WHERE r.id = $1",
+                id
+            )
+            if user_data:
+                await notify_user_request_handled(user_data, "player claim", approved=True)
+
         return result
     else:
         return status
+
+
 
 async def approve_director_claim(id):
     query = """
@@ -206,7 +223,49 @@ async def approve_director_claim(id):
         AND r.id = $1
         """
         result = await DatabaseConnection.update_query(query, id)
+
+        # Send notification
+        if result:
+            user_data = await DatabaseConnection.read_query(
+                "SELECT u.id, u.last_name, u.email FROM users u JOIN requests r ON u.id = r.user_id WHERE r.id = $1",
+                id
+            )
+            if user_data:
+                await notify_user_request_handled(user_data, "director claim", approved=True)
+
         return result
     else:
         return status
+
     
+async def deny_claim(id):
+    query = """
+    UPDATE requests
+    SET approved_or_denied = False
+    WHERE id = $1
+    """
+    status = await DatabaseConnection.update_query(query, id)
+
+    if status:
+        query = """
+        DELETE FROM requests
+        WHERE id = $1
+        """
+        result = await DatabaseConnection.update_query(query, id)
+
+        # Send notification
+        if result:
+            user_data = await DatabaseConnection.read_query(
+                "SELECT u.id, u.last_name, u.email FROM users u JOIN requests r ON u.id = r.user_id WHERE r.id = $1",
+                id
+            )
+            if user_data:
+                await notify_user_request_handled(user_data, "claim", approved=False)
+
+            return True
+    else:
+        return False
+
+    
+
+
