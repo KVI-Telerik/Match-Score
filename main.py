@@ -12,7 +12,7 @@ from routers.web.user import web_users_router
 
 app = FastAPI()
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# app.mount("/static", StaticFiles(directory="static"), name="static")
 
 app.include_router(api_users_router)
 app.include_router(api_players_profiles_router)
