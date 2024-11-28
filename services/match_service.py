@@ -162,6 +162,45 @@ async def get_by_id(match_id: int) -> Optional[Match]:
         participants=participants  
     )
 
+async def get_all() -> List[Dict]:
+
+    query = """
+            SELECT 
+                m.id,
+                m.format,
+                m.date,
+                m.tournament_id,
+                m.tournament_type,
+                m.finished,
+                pp.full_name,
+                COALESCE(mp.score, 0) as score
+            FROM match m
+            JOIN match_participants mp ON m.id = mp.match_id
+            JOIN player_profiles pp ON mp.player_profile_id = pp.id
+            ORDER BY m.date DESC
+        """
+
+    results = await DatabaseConnection.read_query(query)
+    if not results:
+        return []
+
+
+    matches_dict = {}
+    for row in results:
+        match_id = row[0]
+        if match_id not in matches_dict:
+            matches_dict[match_id] = {
+                "id": row[0],
+                "format": row[1],
+                "date": row[2].strftime("%Y-%m-%d %H:%M"),
+                "tournament_id": row[3],
+                "tournament_type": row[4],
+                "finished": row[5],
+                "participants": []
+            }
+        matches_dict[match_id]["participants"].append(f"{row[6]}-{row[7]}")
+
+    return list(matches_dict.values())
 
 async def get_match_with_scores(match_id: int) -> Optional[Dict]:
     query = """
