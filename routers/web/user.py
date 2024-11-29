@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Form, HTTPException
 from fastapi.responses import  HTMLResponse, RedirectResponse
-from data.models import User
+from data.models import User, UserLogin
 from services import user_service
 from fastapi.templating import Jinja2Templates
 
@@ -14,20 +14,24 @@ async def login_page(request: Request):
         {"request": request}
     )
 
+
 @web_users_router.post("/login")
 async def login(
         request: Request,
         email: str = Form(...),
-        password : str = Form(...)
+        password: str = Form(...)
 ):
-    token = await user_service.login_user(email,password)
+
+    login_data = UserLogin(email=email, password=password)
+
+    token = await user_service.login_user(login_data.email, login_data.password)
     if not token:
         return templates.TemplateResponse(
             "users/login.html",
             {"request": request, "error": "Invalid credentials"}
         )
-    response = RedirectResponse(url ="/", status_code=302)
-    response.set_cookie(key="access token", value=token["access token"])
+    response = RedirectResponse(url="/", status_code=302)
+    response.set_cookie(key="access_token", value=token["access_token"])
     return response
 
 @web_users_router.get('/register', response_class=HTMLResponse)

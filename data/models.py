@@ -146,7 +146,7 @@ class Tournament(BaseModel):
         return v
 
     @field_validator('match_format')
-    def validate_format(cls, v: str) -> str:
+    def validate_match_format(cls, v: str) -> str:
         valid_formats = ['Time limited', 'Score limited']
         if not any(format_type in v for format_type in valid_formats):
             raise ValueError("Format must be either 'Time limited' or 'Score limited'")
