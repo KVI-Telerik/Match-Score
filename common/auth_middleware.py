@@ -3,7 +3,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError
 
 from data.database import DatabaseConnection
-from services.user_service import SECRET_KEY, ALGORITHM
+from services.user_service import SECRET_KEY, ALGORITHM, get_user_by_id
 from jose import jwt
 
 security = HTTPBearer()
@@ -42,6 +42,16 @@ async def auth_middleware(request: Request, credentials: HTTPAuthorizationCreden
 #     except Exception as e:
 #         print(f"Error checking admin status: {e}")
 #         return False
+
+def get_user_if_token(request: Request):
+    token = request.cookies.get("token")
+    if token:
+       payload = validate_token(token)
+       user = get_user_by_id(payload["id"])
+       return user
+    else:
+        return None
+    
 
 
 

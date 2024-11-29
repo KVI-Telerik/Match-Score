@@ -192,7 +192,7 @@ async def get_all() -> List[Dict]:
             matches_dict[match_id] = {
                 "id": row[0],
                 "format": row[1],
-                "date": row[2].strftime("%Y-%m-%d %H:%M"),
+                "date": row[2],
                 "tournament_id": row[3],
                 "tournament_type": row[4],
                 "finished": row[5],
