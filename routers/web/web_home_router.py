@@ -3,6 +3,7 @@ from fastapi.responses import HTMLResponse
 from common.template_config import CustomJinja2Templates
 from services import tournament_service, match_service
 from datetime import datetime
+from common.security import csrf
 
 templates = CustomJinja2Templates(directory="templates")
 
@@ -31,5 +32,6 @@ async def home(request: Request):
             "request": request,
             "latest_tournaments": latest_tournaments,
             "upcoming_matches": upcoming_matches,
+            "csrf_token": csrf.generate_token()
         }
     )

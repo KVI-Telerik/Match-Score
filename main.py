@@ -1,10 +1,9 @@
 import uvicorn
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from common.rate_limiter import RateLimiter, rate_limit
-
-# Import your routers
+from common.security import csrf, SecurityHeaders, verify_csrf_token
 from routers.api.user import users_router as api_users_router
 from routers.api.player_profile import players_profiles_router as api_players_profiles_router
 from routers.api.match import matches_router as api_matches_router
@@ -58,6 +57,27 @@ async def test_rate_limit_status():
             for ip, endpoints in rate_limiter.requests.items()
         }
     }
+
+@app.middleware("http")
+async def security_middleware(request: Request, call_next):
+    """Global security middleware"""
+    # Add security headers to all responses
+    response = await call_next(request)
+    headers = SecurityHeaders.get_security_headers()
+    response.headers.update(headers)
+    return response
+
+@app.middleware("http")
+async def csrf_middleware(request: Request, call_next):
+    """CSRF protection middleware"""
+    if request.method in ["POST", "PUT", "DELETE", "PATCH"]:
+        if "web" in str(request.url.path):
+            if not await verify_csrf_token(request):
+                raise HTTPException(
+                    status_code=403,
+                    detail="CSRF token missing or invalid"
+                )
+    return await call_next(request)
 
 if __name__ == "__main__":
     uvicorn.run('main:app')

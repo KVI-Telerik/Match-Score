@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Request, Form, HTTPException
+from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
+from common.security import InputSanitizer
 from services import match_service, user_service
 from data.models import Match
 from datetime import datetime
@@ -47,10 +48,8 @@ async def new_match_form(request: Request):
 
 @web_match_router.post("/new")
 async def create_match(
-        request: Request,
-        format: str = Form(...),
-        date: str = Form(...),
-        participants: str = Form(...)
+    request: Request,
+    sanitized_data: dict = Depends(InputSanitizer.sanitize_form_data)
 ):
     token = request.cookies.get("access_token")
     if not token:
@@ -60,11 +59,10 @@ async def create_match(
     if not is_authorized:
         raise HTTPException(status_code=403, detail="Admin or director access required")
 
-    participant_list = [p.strip() for p in participants.split(',')]
-
+    participant_list = [p.strip() for p in sanitized_data.get("participants").split(',')]
     match_data = Match(
-        format=format,
-        date=datetime.fromisoformat(date),
+        format=sanitized_data.get("format"),
+        date=datetime.fromisoformat(sanitized_data.get("date")),
         participants=participant_list,
         tournament_id=None,
         tournament_type=None

@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Request, Form, HTTPException
+from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from services import player_profile_service, user_service
 from data.models import PlayerProfile, UpdateProfile
 from fastapi.templating import Jinja2Templates
+from common.security import InputSanitizer, csrf
 
 templates = Jinja2Templates(directory="templates")
 web_player_router = APIRouter(prefix="/players")
@@ -46,10 +47,8 @@ async def new_player_form(request: Request):
 
 @web_player_router.post("/new")
 async def create_player(
-        request: Request,
-        full_name: str = Form(...),
-        country: str = Form(None),
-        sports_club: str = Form(None)
+    request: Request,
+    sanitized_data: dict = Depends(InputSanitizer.sanitize_form_data)
 ):
     token = request.cookies.get("access_token")
     if not token:
@@ -60,9 +59,9 @@ async def create_player(
         raise HTTPException(status_code=403, detail="Admin access required")
 
     player_data = PlayerProfile(
-        full_name=full_name,
-        country=country,
-        sports_club=sports_club,
+        full_name=sanitized_data.get("full_name"),
+        country=sanitized_data.get("country"),
+        sports_club=sanitized_data.get("sports_club"),
         wins=0,
         losses=0,
         draws=0

@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Request, Form, HTTPException
+from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
+from common.security import InputSanitizer, csrf
 from services import tournament_service, user_service
 from data.models import Tournament
 from fastapi.templating import Jinja2Templates
@@ -33,7 +34,8 @@ async def tournament_detail(request: Request, tournament_id: int):
         {
             "request": request,
             "tournament": tournament,
-            "standings": standings
+            "standings": standings,
+            "csrf_token": csrf.generate_token()
         }
     )
 
@@ -56,12 +58,8 @@ async def new_tournament_form(request: Request):
 
 @web_tournament_router.post("/new")
 async def create_tournament(
-        request: Request,
-        title: str = Form(...),
-        format: str = Form(...),
-        match_format: str = Form(...),
-        prize: int = Form(0),
-        participants: str = Form(...)
+    request: Request,
+    sanitized_data: dict = Depends(InputSanitizer.sanitize_form_data)
 ):
     token = request.cookies.get("access_token")
     if not token:
@@ -71,13 +69,13 @@ async def create_tournament(
     if not is_authorized:
         raise HTTPException(status_code=403, detail="Admin or director access required")
 
-    participant_list = [p.strip() for p in participants.split(',')]
-
+    # Use sanitized data
+    participant_list = [p.strip() for p in sanitized_data.get("participants").split(',')]
     tournament_data = Tournament(
-        title=title,
-        format=format,
-        match_format=match_format,
-        prize=prize
+        title=sanitized_data.get("title"),
+        format=sanitized_data.get("format"),
+        match_format=sanitized_data.get("match_format"),
+        prize=int(sanitized_data.get("prize", 0))
     )
 
     result = await tournament_service.create(tournament_data, participant_list)
