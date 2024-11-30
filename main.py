@@ -1,8 +1,8 @@
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
-from common.rate_limiter import RateLimiter
+from common.rate_limiter import RateLimiter, rate_limit
 
 # Import your routers
 from routers.api.user import users_router as api_users_router
@@ -41,6 +41,23 @@ app.include_router(web_tournament_router)
 app.include_router(web_match_router)
 app.include_router(web_player_router)
 app.include_router(web_home_router)
+
+@app.get("/test/rate-limit", dependencies=[Depends(rate_limit)])
+async def test_rate_limit():
+    """Test endpoint with rate limiting"""
+    return {"message": "Request successful"}
+
+@app.get("/test/rate-limit-status")
+async def test_rate_limit_status():
+    """Check rate limiter state"""
+    return {
+        "active_ips": len(rate_limiter.requests),
+        "request_counts": {
+            ip: {endpoint: len(timestamps) 
+                for endpoint, timestamps in endpoints.items()}
+            for ip, endpoints in rate_limiter.requests.items()
+        }
+    }
 
 if __name__ == "__main__":
     uvicorn.run('main:app')

@@ -1,66 +1,68 @@
-from fastapi import HTTPException, Request
+from fastapi import FastAPI, Request, HTTPException, Depends
 from datetime import datetime, timedelta
 import asyncio
 from typing import Dict, List
 
-
 class RateLimiter:
-    def __init__(self):
+    def __init__(self, requests_per_minute: int = 60):
+        self.requests_per_minute = requests_per_minute
         self.requests: Dict[str, Dict[str, List[datetime]]] = {}
+        
+        asyncio.create_task(self._cleanup_old_requests())
 
-        asyncio.create_task(self.clean_up())
+    async def _check_request(self, request: Request) -> None:
+        # Get client IP and endpoint
+        client_ip = request.client.host
+        endpoint = request.url.path
+        current_time = datetime.now()
 
-    async def clean_up(self):
-        """Periodically clean up old request records"""
-        while True:
-            current_time = datetime.now()
-            for ip in list(self.requests.keys()):
-                for endpoint in list(self.requests[ip].keys()):
-                    self.requests[ip][endpoint] = [
-                        request_time
-                        for request_time in self.requests[ip][endpoint]
-                        if request_time + timedelta(minutes=1) > current_time
-                    ]
+        # Initialize tracking for new IP/endpoint
+        if client_ip not in self.requests:
+            self.requests[client_ip] = {}
+        if endpoint not in self.requests[client_ip]:
+            self.requests[client_ip][endpoint] = []
 
-                    if not self.requests[ip][endpoint]:
-                       del self.requests[ip][endpoint]
-                    
-                if not self.requests[ip]:
-                    del self.requests[ip]
-            await asyncio.sleep(60)
-
-    async def check_rate_limit(
-        self,
-        request: Request,
-        max_requests: int = 60):
-            """Check if request should be rate limited"""
-
-            client_ip = request.client.host
-            endpoint = request.url.path
-            current_time = datetime.now()
-
-            if client_ip not in self.requests:
-                self.requests[client_ip] = {}
-            if endpoint not in self.requests[client_ip]:
-                self.requests[client_ip][endpoint] = []
-
-            self.requests[client_ip][endpoint].append(current_time)
-
-            recent_requests = len([
-                ts for ts in self.requests[client_ip][endpoint]
-                if ts + timedelta(minutes=1) > current_time
-            ])
-
-            if recent_requests > max_requests:
-                raise HTTPException(
-                    status_code=429,
-                    detail="Too many requests, slow down!"
-                )
-
-
-rate_limiter = RateLimiter()
-async def rate_limit(request: Request, max_requests: int = 60):
-    await rate_limiter.check_rate_limit(request, max_requests)
-
+        # Add current request timestamp
+        self.requests[client_ip][endpoint].append(current_time)
 
        
+        recent_requests = len([
+            ts for ts in self.requests[client_ip][endpoint]
+            if (current_time - ts) < timedelta(minutes=1)
+        ])
+
+        print(f"IP: {client_ip}, Endpoint: {endpoint}, Recent requests: {recent_requests}")  # Debug line
+
+        
+        if recent_requests > self.requests_per_minute:
+            raise HTTPException(
+                status_code=429,
+                detail=f"Rate limit exceeded. Maximum {self.requests_per_minute} requests per minute."
+            )
+
+    async def _cleanup_old_requests(self):
+        while True:
+            try:
+                current_time = datetime.now()
+                for ip in list(self.requests.keys()):
+                    for endpoint in list(self.requests[ip].keys()):
+                       
+                        self.requests[ip][endpoint] = [
+                            ts for ts in self.requests[ip][endpoint]
+                            if (current_time - ts) < timedelta(minutes=1)
+                        ]
+                        
+                        if not self.requests[ip][endpoint]:
+                            del self.requests[ip][endpoint]
+                    
+                    if not self.requests[ip]:
+                        del self.requests[ip]
+            except Exception as e:
+                print(f"Error in cleanup task: {e}")
+            await asyncio.sleep(60)  
+
+async def rate_limit(request: Request, limiter: RateLimiter = Depends(lambda: rate_limiter)):
+    await limiter._check_request(request)
+
+
+rate_limiter = RateLimiter(requests_per_minute=5)  
