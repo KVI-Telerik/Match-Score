@@ -1,13 +1,16 @@
-from fastapi import APIRouter, HTTPException, status, Header
+from fastapi import APIRouter, HTTPException, status, Header, Depends
 from data.models import User, UserLogin
 from services.user_service import all_requests, approve_director_claim, approve_player_claim, claim_director_request, claim_request, claim_type, create_user, is_admin, login_user
+from common.rate_limiter import rate_limit
 
 users_router = APIRouter(prefix='/api/users', tags=['users'])
 
-@users_router.post("/register", status_code=status.HTTP_201_CREATED)
+@users_router.post("/register", status_code=status.HTTP_201_CREATED,
+                    dependencies=[Depends(lambda request: rate_limit(request, max_requests=3))])
 async def register_user(user_data: User):
     """
-    Register a new user.
+    Register a new user with rate limiting to prevent abuse.
+    Maximum 3 registration attempts per minute per IP.
     """
     user = await create_user(user_data)
     if not user:
@@ -17,10 +20,11 @@ async def register_user(user_data: User):
         )
     return {"message": "User registered successfully", "user_id": user.id}
 
-@users_router.post("/login")
-async def login_user_endpoint(login_data: UserLogin):
+@users_router.post("/login",dependencies=[Depends(lambda request: rate_limit(request, max_requests=10))])
+async def login_user_endpoint(login_data: UserLogin,):
     """
-    Log in a user and return a JWT token.
+    Log in a user with rate limiting to prevent brute force attacks.
+    Maximum 10 login attempts per minute per IP.
     """
     token = await login_user(login_data.email, login_data.password)
     if not token:
@@ -30,8 +34,16 @@ async def login_user_endpoint(login_data: UserLogin):
         )
     return token
 
-@users_router.post("/player_profile",status_code=status.HTTP_200_OK)
+@users_router.post("/player_profile",
+                   status_code=status.HTTP_200_OK,
+                   dependencies=[Depends(lambda request: rate_limit(request, max_requests=5))])
+
 async def claim_player_profile(token: str = Header(None)):
+    """
+    Claim a player profile with moderate rate limiting.
+    Maximum 5 requests per minute per IP.
+    """
+
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -47,8 +59,14 @@ async def claim_player_profile(token: str = Header(None)):
     return {"message": "awaiting approval"}
 
 
-@users_router.post("/director_profile",status_code=status.HTTP_200_OK)
+@users_router.post("/director_profile",
+                   status_code=status.HTTP_200_OK,
+                   dependencies=[Depends(lambda request: rate_limit(request, max_requests=5))])
 async def claim_director_profile(token: str = Header(None)):
+    """
+    Claim a director profile with moderate rate limiting.
+    Maximum 5 requests per minute per IP.
+    """
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
