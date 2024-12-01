@@ -99,20 +99,20 @@ class CSRFProtection:
             security_logger.warning(f"CSRF token validation failed: {str(e)}")
             return False
 
-class SecurityHeaders:
-    """Defines security headers for responses"""
+# class SecurityHeaders:
+#     """Defines security headers for responses"""
     
-    @staticmethod
-    def get_security_headers() -> Dict[str, str]:
-        """Returns a dictionary of security headers"""
-        return {
-            "X-Frame-Options": "DENY",
-            "X-Content-Type-Options": "nosniff",
-            "X-XSS-Protection": "1; mode=block",
-            "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-            "Content-Security-Policy": "default-src 'self'",
-            "Referrer-Policy": "strict-origin-when-cross-origin"
-        }
+#     @staticmethod
+#     def get_security_headers() -> Dict[str, str]:
+#         """Returns a dictionary of security headers"""
+#         return {
+#             "X-Frame-Options": "DENY",
+#             "X-Content-Type-Options": "nosniff",
+#             "X-XSS-Protection": "1; mode=block",
+#             "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+#             "Content-Security-Policy": "default-src 'self'",
+#             "Referrer-Policy": "strict-origin-when-cross-origin"
+#         }
 
 # Initialize the CSRF protection
 csrf = CSRFProtection(SECURITY_KEY)

@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException, status, Header, Depends
 from data.models import User, UserLogin
 from services.user_service import all_requests, approve_director_claim, approve_player_claim, claim_director_request, claim_request, claim_type, create_user, is_admin, login_user
-from common.rate_limiter import rate_limit
+from common.rate_limiter import create_rate_limit
 
 users_router = APIRouter(prefix='/api/users', tags=['users'])
 
 @users_router.post("/register", status_code=status.HTTP_201_CREATED,
-                    dependencies=[Depends(lambda request: rate_limit(request, max_requests=3))])
+                    dependencies=[Depends(create_rate_limit(max_requests=3))])
 async def register_user(user_data: User):
     """
     Register a new user with rate limiting to prevent abuse.
@@ -20,7 +20,7 @@ async def register_user(user_data: User):
         )
     return {"message": "User registered successfully", "user_id": user.id}
 
-@users_router.post("/login",dependencies=[Depends(lambda request: rate_limit(request, max_requests=10))])
+@users_router.post("/login",dependencies=[Depends(create_rate_limit(max_requests=3))])
 async def login_user_endpoint(login_data: UserLogin,):
     """
     Log in a user with rate limiting to prevent brute force attacks.
@@ -34,10 +34,7 @@ async def login_user_endpoint(login_data: UserLogin,):
         )
     return token
 
-@users_router.post("/player_profile",
-                   status_code=status.HTTP_200_OK,
-                   dependencies=[Depends(lambda request: rate_limit(request, max_requests=5))])
-
+@users_router.post("/player_profile",status_code=status.HTTP_200_OK)
 async def claim_player_profile(token: str = Header(None)):
     """
     Claim a player profile with moderate rate limiting.
@@ -59,9 +56,7 @@ async def claim_player_profile(token: str = Header(None)):
     return {"message": "awaiting approval"}
 
 
-@users_router.post("/director_profile",
-                   status_code=status.HTTP_200_OK,
-                   dependencies=[Depends(lambda request: rate_limit(request, max_requests=5))])
+@users_router.post("/director_profile",status_code=status.HTTP_200_OK)
 async def claim_director_profile(token: str = Header(None)):
     """
     Claim a director profile with moderate rate limiting.
