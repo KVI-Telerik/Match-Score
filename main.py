@@ -13,6 +13,7 @@ from routers.web.player_profile import web_player_router
 from routers.web.tournament import web_tournament_router
 from routers.web.user import web_users_router
 from routers.web.web_home_router import web_home_router
+from fastapi.middleware.cors import CORSMiddleware
 
 
 @asynccontextmanager
@@ -78,6 +79,14 @@ async def csrf_middleware(request: Request, call_next):
                     detail="CSRF token missing or invalid"
                 )
     return await call_next(request)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  
+    allow_credentials=True,
+    allow_methods=["*"], 
+    allow_headers=["*"]  
+)
 
 if __name__ == "__main__":
     uvicorn.run('main:app')
