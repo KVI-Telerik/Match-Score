@@ -13,7 +13,6 @@ from routers.web.player_profile import web_player_router
 from routers.web.tournament import web_tournament_router
 from routers.web.user import web_users_router
 from routers.web.web_home_router import web_home_router
-from fastapi.middleware.cors import CORSMiddleware
 
 
 @asynccontextmanager
@@ -29,7 +28,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="static/"), name="static")
 
 app.include_router(api_users_router)
 app.include_router(api_players_profiles_router)
@@ -80,13 +79,7 @@ async def csrf_middleware(request: Request, call_next):
                 )
     return await call_next(request)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  
-    allow_credentials=True,
-    allow_methods=["*"], 
-    allow_headers=["*"]  
-)
+
 
 if __name__ == "__main__":
     uvicorn.run('main:app')
