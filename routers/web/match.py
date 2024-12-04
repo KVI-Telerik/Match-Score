@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from common.security import InputSanitizer
+from common.template_config import CustomJinja2Templates
 from services import match_service, user_service
 from data.models import Match
 from datetime import datetime
-from fastapi.templating import Jinja2Templates
 
-templates = Jinja2Templates(directory="templates")
+
+templates = CustomJinja2Templates(directory="templates")
 web_match_router = APIRouter(prefix="/matches")
 
 

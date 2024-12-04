@@ -15,8 +15,8 @@ from services.notification_service import notify_user_request_handled
 
 load_dotenv()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = os.getenv("SECRET_KEY","6a631f3a77008d5586d9ecc2ca7bea47695d575b5e6195dd6ca200829a8ae40c")
-ALGORITHM = os.getenv("ALGORITHM","HS256")
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 

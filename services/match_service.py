@@ -173,17 +173,18 @@ async def get_all() -> List[Dict]:
                 m.tournament_type,
                 m.finished,
                 pp.full_name,
-                COALESCE(mp.score, 0) as score
+                COALESCE(mp.score, 0) as score,
+                t.title as tournament_name
             FROM match m
             JOIN match_participants mp ON m.id = mp.match_id
             JOIN player_profiles pp ON mp.player_profile_id = pp.id
+            LEFT JOIN tournament t ON m.tournament_id = t.id
             ORDER BY m.date DESC
         """
 
     results = await DatabaseConnection.read_query(query)
     if not results:
         return []
-
 
     matches_dict = {}
     for row in results:
@@ -196,12 +197,12 @@ async def get_all() -> List[Dict]:
                 "tournament_id": row[3],
                 "tournament_type": row[4],
                 "finished": row[5],
-                "participants": []
+                "participants": [],
+                "tournament_name": row[8]
             }
         matches_dict[match_id]["participants"].append(f"{row[6]}-{row[7]}")
 
     return list(matches_dict.values())
-
 async def get_match_with_scores(match_id: int) -> Optional[Dict]:
     query = """
             SELECT 
@@ -212,10 +213,12 @@ async def get_match_with_scores(match_id: int) -> Optional[Dict]:
                 m.tournament_type,
                 m.finished,
                 pp.full_name,
-                COALESCE(mp.score, 0) as score
+                COALESCE(mp.score, 0) as score,
+                t.title as tournament_name
             FROM match m
             JOIN match_participants mp ON m.id = mp.match_id
             JOIN player_profiles pp ON mp.player_profile_id = pp.id
+            LEFT JOIN tournament t ON m.tournament_id = t.id
             WHERE m.id = $1
         """
 
@@ -231,7 +234,8 @@ async def get_match_with_scores(match_id: int) -> Optional[Dict]:
         "tournament_id": results[0][3],
         "tournament_type": results[0][4],
         "finished": results[0][5],
-        "participants": [f"{row[6]}-{row[7]}" for row in results]
+        "participants": [f"{row[6]}-{row[7]}" for row in results],
+        "tournament_name": results[0][8]
     }
 
     return match
