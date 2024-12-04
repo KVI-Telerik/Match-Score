@@ -115,7 +115,7 @@ async def logout(request: Request):
             # Continue with logout even if session clearing fails
             pass
 
-    response = RedirectResponse(url="/users/login", status_code=302)
+    response = RedirectResponse(url="/", status_code=302)
     
     response.delete_cookie(
         key="access_token",

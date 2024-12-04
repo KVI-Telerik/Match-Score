@@ -1,3 +1,4 @@
+import os
 import uvicorn
 from fastapi import Depends, FastAPI, Request, HTTPException
 from fastapi.responses import RedirectResponse
@@ -30,19 +31,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan,docs_url="/docs")
 
 
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-app.mount("/static", StaticFiles(directory="static/"), name="static")
-
-app.include_router(api_users_router)
-app.include_router(api_players_profiles_router)
-app.include_router(api_matches_router)
-app.include_router(api_tournaments_router)
-
-app.include_router(web_users_router)
-app.include_router(web_tournament_router)
-app.include_router(web_match_router)
-app.include_router(web_player_router)
-app.include_router(web_home_router)
 
 @app.get("/test/rate-limit", dependencies=[Depends(create_rate_limit(5))])
 async def test_rate_limit():
@@ -64,7 +55,9 @@ async def test_rate_limit_status():
 @app.middleware("http")
 async def session_middleware(request: Request, call_next):
     """Middleware to track user activity and validate sessions"""
-    
+
+    if request.url.path.startswith("/static/"):
+        return await call_next(request)
     is_api_route = request.url.path.startswith("/api/")
     
     # Public paths that don't require authentication
@@ -78,8 +71,11 @@ async def session_middleware(request: Request, call_next):
         "/openapi.json",
         "/",
         "/tournaments",
+        "/tournaments/",
         "/matches",
-        "/players"
+        "/matches/",
+        "/players",
+        "/players/"
     }
     
     if request.url.path in public_paths:
@@ -144,6 +140,17 @@ async def csrf_middleware(request: Request, call_next):
                     detail="CSRF token missing or invalid"
                 )
     return await call_next(request)
+
+app.include_router(api_users_router)
+app.include_router(api_players_profiles_router)
+app.include_router(api_matches_router)
+app.include_router(api_tournaments_router)
+
+app.include_router(web_users_router)
+app.include_router(web_tournament_router)
+app.include_router(web_match_router)
+app.include_router(web_player_router)
+app.include_router(web_home_router)
 
 
 if __name__ == "__main__":
