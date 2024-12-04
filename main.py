@@ -1,5 +1,6 @@
 import uvicorn
 from fastapi import Depends, FastAPI, Request, HTTPException
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from common.rate_limiter import RateLimiter, rate_limiter,create_rate_limit
@@ -13,19 +14,21 @@ from routers.web.player_profile import web_player_router
 from routers.web.tournament import web_tournament_router
 from routers.web.user import web_users_router
 from routers.web.web_home_router import web_home_router
+from services.user_service import validate_token_with_session, SessionManager
+from jose import JWTError
+
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    
     global rate_limiter
     rate_limiter = RateLimiter()
-    print("Starting up the application...")  
     yield
     
-    print("Shutting down the application...")  
+    SessionManager._sessions.clear()
 
 app = FastAPI(lifespan=lifespan,docs_url="/docs")
+
 
 
 app.mount("/static", StaticFiles(directory="static/"), name="static")
@@ -58,7 +61,62 @@ async def test_rate_limit_status():
         }
     }
 
-
+@app.middleware("http")
+async def session_middleware(request: Request, call_next):
+    """Middleware to track user activity and validate sessions"""
+    
+    is_api_route = request.url.path.startswith("/api/")
+    
+    # Public paths that don't require authentication
+    public_paths = {
+        "/api/users/login",
+        "/api/users/register",
+        "/users/login",
+        "/users/register",
+        "/docs",
+        "/redoc",
+        "/openapi.json",
+        "/",
+        "/tournaments",
+        "/matches",
+        "/players"
+    }
+    
+    if request.url.path in public_paths:
+        return await call_next(request)
+        
+    if is_api_route:
+        # Handle API authentication
+        auth_header = request.headers.get("token")
+        if not auth_header:
+            raise HTTPException(status_code=401, detail="Authorization header missing")
+            
+        token = auth_header
+        try:
+            payload = await validate_token_with_session(token)
+            if not payload:
+                raise HTTPException(status_code=401, detail="Session expired")
+            
+            request.state.user = payload
+            return await call_next(request)
+        except JWTError:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    else:
+        # Handle web authentication via cookies
+        token = request.cookies.get("access_token")
+        if token:
+            try:
+                payload = await validate_token_with_session(token)
+                if payload:
+                    request.state.user = payload
+                    return await call_next(request)
+            except JWTError:
+                pass
+                
+        if request.url.path not in public_paths:
+            return RedirectResponse(url="/users/login", status_code=302)
+    
+    return await call_next(request)
 
 @app.middleware("http")
 async def security_middleware(request: Request, call_next):

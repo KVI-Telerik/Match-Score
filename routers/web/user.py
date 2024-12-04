@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Request, Form, HTTPException, Depends
+from fastapi import APIRouter, Request, HTTPException, Depends, logger
 from fastapi.responses import HTMLResponse, RedirectResponse
-
+import logging
 from common.template_config import CustomJinja2Templates
 from data.models import User, UserLogin
 from services import user_service
@@ -102,15 +102,28 @@ async def profile_page(request: Request):
     )
 
 @web_users_router.get("/logout")
-async def logout():
+async def logout(request: Request):
+    # Get the access token from cookies
+    token = request.cookies.get("access_token")
+    
+    if token:
+        try:
+            # Call the user service logout function to clear the session
+            await user_service.logout_user(token)
+        except Exception as e:
+            logger.error(f"Error during logout: {str(e)}")
+            # Continue with logout even if session clearing fails
+            pass
+
     response = RedirectResponse(url="/users/login", status_code=302)
-    # Securely clear the cookie
+    
     response.delete_cookie(
         key="access_token",
         httponly=True,
         secure=True,
         samesite="lax"
     )
+    
     return response
 
 @web_users_router.get("/admin", response_class=HTMLResponse)
