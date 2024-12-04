@@ -1,24 +1,86 @@
-from fastapi import HTTPException, Header
+from jose import jwt, JWTError
+from passlib.hash import bcrypt
 from passlib.context import CryptContext
-from starlette import status
 from dotenv import load_dotenv
 import os
-# from common.auth_middleware import validate_token
 from data.database import DatabaseConnection
 from data.models import Requests, User
 from passlib.hash import bcrypt
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
-from typing import Optional, List, Dict, Union
-
+from typing import Optional, List, Dict
 from services.player_profile_service import get_player_profile_by_name
 from services.notification_service import notify_user_request_handled
+
 
 load_dotenv()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
+
+
+
+async def create_access_token(user_id: int, email: str) -> str:
+    """
+    Creates an access token and initializes a user session.
+    The token has a 7-day maximum lifetime, but the session requires activity within 1 hour.
+    """
+    expire = datetime.now() + timedelta(days=7)  
+    payload = {
+        "id": user_id,
+        "email": email,
+        "exp": expire
+    }
+    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    
+   
+    SessionManager.update_session(user_id, email)
+    
+    return token
+
+class SessionManager:
+    """Manages user sessions and activity tracking"""
+    _sessions = {}  
+
+    @classmethod
+    def update_session(cls, user_id: int, email: str):
+        """Updates or creates a session for a user"""
+        cls._sessions[user_id] = {
+            'last_activity': datetime.now(),
+            'email': email
+        }
+        
+
+    @classmethod
+    def is_session_active(cls, user_id: int) -> bool:
+        """Checks if a user's session is still active"""
+        if user_id not in cls._sessions:
+           
+            return False
+        
+        session = cls._sessions[user_id]
+        last_activity = session['last_activity']
+        current_time = datetime.now()
+        time_diff = current_time - last_activity
+        is_active = time_diff < timedelta(hours=1)
+        
+        
+        
+        return is_active
+
+    @classmethod
+    def get_user_session(cls, user_id: int) -> Optional[Dict]:
+        """Retrieves session information for a user"""
+        return cls._sessions.get(user_id)
+
+    @classmethod
+    def clear_session(cls, user_id: int):
+        """Removes a user's session"""
+        if user_id in cls._sessions:
+            email = cls._sessions[user_id]['email']
+            
+            del cls._sessions[user_id]
 
 async def all_users() -> List[User]:
     query = "SELECT * FROM users"
@@ -59,6 +121,10 @@ async def create_user(user: User) -> Optional[User]:
     return user
 
 async def login_user(email: str, password: str) -> Optional[Dict[str, str]]:
+    """
+    Authenticates a user and creates both a token and an active session.
+    Returns None if authentication fails.
+    """
     query = "SELECT * FROM users WHERE email = $1"
     user_data = await DatabaseConnection.read_query(query, email)
     if not user_data:
@@ -71,58 +137,79 @@ async def login_user(email: str, password: str) -> Optional[Dict[str, str]]:
     if not bcrypt.verify(password, user.password):
         return None
 
-    expire = datetime.now().astimezone() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    payload = {
-        "id": user.id,
-        "email": user.email,
-        "exp": expire
-    }
-    token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    token = await create_access_token(user.id, user.email)
     return {"access_token": token, "token_type": "bearer"}
 
-
-async def is_admin(token: str) -> bool:
-
+async def validate_token_with_session(token: str) -> Optional[Dict]:
+    """
+    Validates a token and checks if the associated session is active.
+    Returns the token payload if valid and session is active, None otherwise.
+    """
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id = payload.get("id")
-        if user_id is None:
+        email = payload.get("email")
+        
+        if user_id and SessionManager.is_session_active(user_id):
+            SessionManager.update_session(user_id, email)
+            return payload
+            
+        return None
+    except JWTError:
+        return None
+
+async def is_admin(token: str) -> bool:
+    """Check if user is admin while validating their session"""
+    try:
+        payload = await validate_token_with_session(token)
+        if not payload:
             return False
 
+        user_id = payload.get("id")
         query = "SELECT is_admin FROM users WHERE id = $1"
         result = await DatabaseConnection.read_query(query, user_id)
 
-        if result and result[0] and result[0][0]:
-            return True
-        return False
+        return bool(result and result[0] and result[0][0])
 
     except JWTError:
         return False
 
 async def is_director(token: str) -> bool:
-
+    """Check if user is director while validating their session"""
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("id")
-        if user_id is None:
+        payload = await validate_token_with_session(token)
+        if not payload:
             return False
 
+        user_id = payload.get("id")
         query = "SELECT is_director FROM users WHERE id = $1"
         result = await DatabaseConnection.read_query(query, user_id)
 
-        if result and result[0] and result[0][0]:
+        return bool(result and result[0] and result[0][0])
+
+    except JWTError:
+        return False
+    
+async def logout_user(token: str) -> bool:
+    """Properly logout user by clearing their session"""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("id")
+        if user_id:
+            SessionManager.clear_session(user_id)
             return True
         return False
-
     except JWTError:
         return False
 
 
 async def claim_request(token):
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    user_id = payload.get("id")
-    if user_id is None:
+    """Claim a player profile while validating session"""
+    payload = await validate_token_with_session(token)
+    if not payload:
         return False
+    
+    user_id = payload.get("id")
     user = await get_user_by_id(user_id)
     first_name = user.first_name
     last_name = user.last_name
@@ -130,28 +217,42 @@ async def claim_request(token):
 
     player_profile = await get_player_profile_by_name(fullname)
     if player_profile:
-       query = """
-       INSERT INTO requests (user_id, player_profile_id)
+        query = """
+        INSERT INTO requests (user_id, player_profile_id)
         VALUES ($1, $2)
-       """
-
-       result = await DatabaseConnection.insert_query(query, user_id, player_profile.id)
-       return result
-    
+        """
+        result = await DatabaseConnection.insert_query(query, user_id, player_profile.id)
+        return result
+    return False
 
 async def claim_director_request(token):
-    payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    user_id = payload.get("id")
-    if user_id is None:
+    """Claim director status while validating session"""
+    payload = await validate_token_with_session(token)
+    if not payload:
         return False
     
+    user_id = payload.get("id")
     query = """
         INSERT INTO requests (user_id)
         VALUES ($1)
-       """
+    """
     
     result = await DatabaseConnection.insert_query(query, user_id)
     return result
+
+async def cleanup_expired_sessions():
+    """Periodically clean up expired sessions"""
+    current_time = datetime.now()
+    expired_users = []
+    
+    for user_id in SessionManager._sessions:
+        if not SessionManager.is_session_active(user_id):
+            expired_users.append(user_id)
+    
+    for user_id in expired_users:
+        SessionManager.clear_session(user_id)
+        
+   
 
 
 async def all_requests():
