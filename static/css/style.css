@@ -135,3 +135,176 @@ footer {
     margin-right: 10px;
     margin-bottom: 2px;
 }
+/* Player Profile Card Styles */
+.card {
+    background: rgba(0, 0, 0, 0.9);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    border: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    color: #ffcc00;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.card-header {
+    background: rgba(0, 0, 0, 0.9);
+    color: #ffcc00;
+    padding: 1.5rem;
+    border-bottom: 2px solid #ffcc00;
+}
+
+.card-header h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #ffcc00;
+}
+
+.card-body {
+    padding: 2rem;
+    color: #ffcc00;
+}
+
+.card-body h4 {
+    color: #ffcc00;
+    border-bottom: 2px solid #ffcc00;
+}
+
+.card-body strong {
+    color: #ffcc00;
+}
+
+.text-center p {
+    color: #ffcc00;
+}
+
+.list-group-item {
+    background: rgba(0, 0, 0, 0.8);
+    color: #ffcc00;
+    border-left: 4px solid #ffcc00;
+    border-top: none;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 204, 0, 0.2);
+}
+
+.list-group-item:hover {
+    background: rgba(0, 0, 0, 0.95);
+    transform: translateX(5px);
+}
+/* Player Statistics */
+.stats-container {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 1rem;
+}
+
+.text-center h5 {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+/* Tournament History */
+.list-group-item {
+    border-left: 4px solid #ffcc00;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #ffcc00;
+    border-color: #ffcc00;
+    color: #000;
+    font-weight: 600;
+    padding: 0.5rem 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #e6b800;
+    border-color: #e6b800;
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+    font-weight: 600;
+    padding: 0.5rem 1.5rem;
+    margin-left: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+    transform: translateY(-2px);
+}
+
+/* Section Headers */
+section h4 {
+    color: #343a40;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #ffcc00;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1rem;
+    }
+
+    .stats-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .text-center {
+        margin-bottom: 1rem;
+    }
+
+    .btn {
+        width: 100%;
+        margin: 0.5rem 0;
+    }
+
+    .btn-secondary {
+        margin-left: 0;
+    }
+}
+
+/* Profile Information */
+.card-body strong {
+    color: #343a40;
+    font-weight: 600;
+}
+
+.text-muted {
+    color: #6c757d !important;
+    font-style: italic;
+}
+
+/* Status Colors */
+.text-success {
+    color: #28a745 !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+}

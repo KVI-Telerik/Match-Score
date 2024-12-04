@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
+
+from common.template_config import CustomJinja2Templates
 from services import player_profile_service, user_service
 from data.models import PlayerProfile, UpdateProfile
-from fastapi.templating import Jinja2Templates
+
 from common.security import InputSanitizer, csrf
 
-templates = Jinja2Templates(directory="templates")
+templates = CustomJinja2Templates(directory="templates")
 web_player_router = APIRouter(prefix="/players")
 
 

@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Request, Form, HTTPException, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
+
+from common.template_config import CustomJinja2Templates
 from data.models import User, UserLogin
 from services import user_service
-from fastapi.templating import Jinja2Templates
 from common.security import InputSanitizer, csrf
 
-templates = Jinja2Templates(directory="templates")
+templates = CustomJinja2Templates(directory="templates")
 web_users_router = APIRouter(prefix="/users")
 
 @web_users_router.get("/login", response_class=HTMLResponse)
