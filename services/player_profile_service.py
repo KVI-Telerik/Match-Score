@@ -160,7 +160,7 @@ async def get_all(search: str = None):
         FROM player_profiles
     """
     if search:
-        query += f" WHERE full_name LIKE '%{search}%'"
+        query += f" WHERE full_name ILIKE '%{search}%'"
 
     results = await DatabaseConnection.read_query(query)
     return [PlayerProfile.from_query_result(*result) for result in results] if results else []
