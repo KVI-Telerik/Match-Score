@@ -31,6 +31,6 @@ async def home(request: Request):
         {
             "request": request,
             "latest_tournaments": latest_tournaments,
-            "upcoming_matches": upcoming_matches
+            "upcoming_matches": upcoming_matches  
         }
     )

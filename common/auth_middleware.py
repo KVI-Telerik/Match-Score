@@ -44,10 +44,13 @@ async def auth_middleware(request: Request, credentials: HTTPAuthorizationCreden
 #         return False
 
 def get_user_if_token(request: Request):
-    token = request.cookies.get("token")
+    token = request.cookies.get("access_token")
     if token:
        payload = validate_token(token)
        user = get_user_by_id(payload["id"])
+       print(payload["id"])
+       print('-------------')
+       print(user)
        return user
     else:
         return None
