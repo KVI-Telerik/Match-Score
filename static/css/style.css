@@ -314,3 +314,23 @@ section h4 {
   bottom: 0;
   width: 100%;
 }
+
+#login-form {
+    padding-top: 100px;
+}
+
+.bg-primary {
+    background-color: rgb(0 0 0 / 90%) !important;
+}
+
+#login-register{
+   color: #ffcc00;
+}
+
+#register-form{
+    padding: 25px;
+}
+
+#match-details-box {
+    padding-top: 100px;
+}
