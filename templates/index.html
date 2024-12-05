@@ -34,7 +34,7 @@
             <div class="container">
                 <h1>Welcome to Tennis Daddy</h1>
                 <p>Your ultimate destination for the latest tennis tournaments and thrilling matches!</p>
-                <a href="../templates/tournaments/list.html" class="btn btn-primary btn-lg mt-3">View Tournaments</a>
+                <a href="/tournaments/" class="btn btn-primary btn-lg mt-3">View Tournaments</a>
             </div>
         </div>
     </div>
@@ -51,7 +51,7 @@
                         <h5 class="card-title">{{ tournament.title }}</h5>
                         <p class="card-text">Format: {{ tournament.format }}</p>
                         <p class="card-text">Prize: ${{ tournament.prize }}</p>
-                        <a href="#" class="btn btn-primary">Learn More</a>
+                        <a href="/tournaments/{{tournament.id}}" class="btn btn-primary">Learn More</a>
                     </div>
                 </div>
             </div>

@@ -4,7 +4,7 @@ from common.security import InputSanitizer, csrf
 from common.template_config import CustomJinja2Templates
 from services import tournament_service, user_service
 from data.models import Tournament
-
+from fastapi.templating import Jinja2Templates
 
 templates = CustomJinja2Templates(directory="templates")
 web_tournament_router = APIRouter(prefix="/tournaments")
@@ -19,26 +19,7 @@ async def tournament_list(request: Request, search: str = None):
     )
 
 
-@web_tournament_router.get("/{tournament_id}", response_class=HTMLResponse)
-async def tournament_detail(request: Request, tournament_id: int):
-    tournament = await tournament_service.get_by_id(tournament_id)
-    if not tournament:
-        raise HTTPException(status_code=404, detail="Tournament not found")
 
-    if tournament["format"] == "League":
-        standings = await tournament_service.get_league_standings(tournament_id)
-    else:
-        standings = None
-
-    return templates.TemplateResponse(
-        "tournaments/detail.html",
-        {
-            "request": request,
-            "tournament": tournament,
-            "standings": standings,
-            "csrf_token": csrf.generate_token()
-        }
-    )
 
 
 @web_tournament_router.get("/new", response_class=HTMLResponse)
@@ -86,6 +67,27 @@ async def create_tournament(
             {"request": request, "error": "Failed to create tournament"}
         )
     return RedirectResponse(url="/tournaments", status_code=302)
+
+@web_tournament_router.get("/{tournament_id}", response_class=HTMLResponse)
+async def tournament_detail(request: Request, tournament_id: int):
+    tournament = await tournament_service.get_by_id(tournament_id)
+    if not tournament:
+        raise HTTPException(status_code=404, detail="Tournament not found")
+
+    if tournament["format"] == "League":
+        standings = await tournament_service.get_league_standings(tournament_id)
+    else:
+        standings = None
+
+    return templates.TemplateResponse(
+        "tournaments/detail.html",
+        {
+            "request": request,
+            "tournament": tournament,
+            "standings": standings,
+            "csrf_token": csrf.generate_token()
+        }
+    )
 
 
 @web_tournament_router.post("/{id}/next_round")

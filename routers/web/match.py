@@ -20,15 +20,7 @@ async def match_list(request: Request):
     )
 
 
-@web_match_router.get("/{match_id}", response_class=HTMLResponse)
-async def match_detail(request: Request, match_id: int):
-    match = await match_service.get_match_with_scores(match_id)
-    if not match:
-        raise HTTPException(status_code=404, detail="Match not found")
-    return templates.TemplateResponse(
-        "matches/detail.html",
-        {"request": request, "match": match}
-    )
+
 
 
 @web_match_router.get("/new", response_class=HTMLResponse)
@@ -76,6 +68,16 @@ async def create_match(
             {"request": request, "error": "Failed to create match"}
         )
     return RedirectResponse(url="/matches", status_code=302)
+
+@web_match_router.get("/{match_id}", response_class=HTMLResponse)
+async def match_detail(request: Request, match_id: int):
+    match = await match_service.get_match_with_scores(match_id)
+    if not match:
+        raise HTTPException(status_code=404, detail="Match not found")
+    return templates.TemplateResponse(
+        "matches/detail.html",
+        {"request": request, "match": match}
+    )
 
 
 @web_match_router.post("/{match_id}/score")

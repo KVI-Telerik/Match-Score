@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request, Form, HTTPException
+from fastapi import APIRouter, Depends, Request, Form, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 
 from common.template_config import CustomJinja2Templates
@@ -12,11 +12,26 @@ web_player_router = APIRouter(prefix="/players")
 
 
 @web_player_router.get("/", response_class=HTMLResponse)
-async def player_list(request: Request, search: str = None):
-    players = await player_profile_service.get_all(search)
+async def player_list(
+        request: Request,
+        search: str = None,
+        page: int = Query(1, ge=1),
+        per_page: int = Query(10, ge=1, le=100)
+):
+
+    result = await player_profile_service.get_all(search, page, per_page)
+
     return templates.TemplateResponse(
         "players/list.html",
-        {"request": request, "players": players}
+        {
+            "request": request,
+            "players": result["players"],
+            "page": result["page"],
+            "total_pages": result["total_pages"],
+            "total": result["total"],
+            "search": search,
+            "per_page": per_page
+        }
     )
 
 
