@@ -1,11 +1,67 @@
+
+/* Base styles */
 body, html {
-    height: 100%;
+    min-height: 100vh;
     margin: 0;
-    overflow-x: hidden;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
     font-family: 'Poppins', sans-serif;
 }
 
-/* Video Background specific to hero section */
+.container{
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* Layout structure */
+.wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.content {
+    flex: 1;
+}
+
+
+/* Navigation */
+.navbar {
+    background: rgba(0, 0, 0, 0.9);
+    padding: 0 2rem;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1030;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.8rem;
+}
+
+.navbar-brand img {
+    height: min(100px, 15vw);
+    width: auto;
+    margin: 0 10px 2px 0;
+}
+
+.navbar-nav .nav-link {
+    color: #ffffff;
+    margin-left: 1rem;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.navbar-nav .nav-link:hover, 
+.navbar-nav .nav-link.active {
+    color: #ffcc00;
+}
+
+/* Hero Section */
 .hero-section {
     position: relative;
     height: 100vh;
@@ -47,14 +103,14 @@ body, html {
 }
 
 .content-container h1 {
-    font-size: 4rem;
+    font-size: clamp(2rem, 5vw, 4rem);
     font-weight: bold;
     margin-bottom: 1rem;
 }
 
 .content-container p {
-    font-size: 1.5rem;
-    max-width: 800px;
+    font-size: clamp(1rem, 2vw, 1.5rem);
+    max-width: min(800px, 90vw);
     margin-bottom: 2rem;
     color: #ffcc00;
     font-weight: 600;
@@ -62,86 +118,15 @@ body, html {
     margin-right: auto;
 }
 
-.navbar {
-    background: rgba(0, 0, 0, 0.9);
-    padding: 0rem 2rem;
-    position: absolute;
-    top: 0;
-    width: 100%;
-    z-index: 3;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-.navbar-brand {
-    font-weight: 600;
-    font-size: 1.8rem;
-}
-
-.navbar-nav .nav-link {
-    color: #ffffff;
-    margin-left: 1rem;
-    font-weight: 500;
-    transition: color 0.3s ease;
-}
-
-.navbar-nav .nav-link:hover, .navbar-nav .nav-link.active {
-    color: #ffcc00;
-}
-
-/* Card Styling */
-.card {
-    background: rgba(255, 255, 255, 0.95);
-    box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.3);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    border: none;
-}
-
-.card:hover {
-    transform: translateY(-10px);
-    box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.4);
-}
-
-.btn-primary {
-    background-color: #ffcc00;
-    border-color: #ffcc00;
-    font-weight: 600;
-}
-
-.btn-primary:hover {
-    background-color: #ffa500;
-    border-color: #ffa500;
-}
-
-/* Section Styling */
-section {
-    padding: 3rem 0;
-    background-color: #f8f9fa;
-}
-
-h2 {
-    color: #343a40;
-    margin-bottom: 2rem;
-}
-
-footer {
-    background: #000;
-    color: white;
-    padding: 2rem 0;
-}
-
-.navbar-brand img {
-    height: 100px;
-    width: auto;
-    margin-right: 10px;
-    margin-bottom: 2px;
-}
-/* Player Profile Card Styles */
+/* Card Styles */
 .card {
     background: rgba(0, 0, 0, 0.9);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     border: none;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     color: #ffcc00;
+    margin-bottom: 1.5rem;
+    height: 100%;
 }
 
 .card:hover {
@@ -177,10 +162,7 @@ footer {
     color: #ffcc00;
 }
 
-.text-center p {
-    color: #ffcc00;
-}
-
+/* List Group Styles */
 .list-group-item {
     background: rgba(0, 0, 0, 0.8);
     color: #ffcc00;
@@ -188,38 +170,17 @@ footer {
     border-top: none;
     border-right: none;
     border-bottom: 1px solid rgba(255, 204, 0, 0.2);
-}
-
-.list-group-item:hover {
-    background: rgba(0, 0, 0, 0.95);
-    transform: translateX(5px);
-}
-/* Player Statistics */
-.stats-container {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 1rem;
-}
-
-.text-center h5 {
-    font-size: 2rem;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-}
-
-/* Tournament History */
-.list-group-item {
-    border-left: 4px solid #ffcc00;
-    margin-bottom: 0.5rem;
     transition: all 0.3s ease;
-}
+ }
 
 .list-group-item:hover {
-    background-color: #f8f9fa;
-    transform: translateX(5px);
+   background: rgba(0, 0, 0, 0.95); 
+   transform: translateX(5px);
+   border-left: 4px solid #ffcc00;
+   color: #ffcc00 !important;
 }
 
-/* Buttons */
+/* Button Styles */
 .btn-primary {
     background-color: #ffcc00;
     border-color: #ffcc00;
@@ -251,7 +212,12 @@ footer {
     transform: translateY(-2px);
 }
 
-/* Section Headers */
+/* Section Styles */
+section {
+    padding: 3rem 0;
+    background-color: #f8f9fa;
+}
+
 section h4 {
     color: #343a40;
     font-weight: 600;
@@ -260,35 +226,37 @@ section h4 {
     border-bottom: 2px solid #ffcc00;
 }
 
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-    .card-body {
-        padding: 1rem;
-    }
+/* Footer */
+#footer-div {
+    width: 100%;
+    margin-top: auto;
+    background: rgba(0, 0, 0, 0.9);
+    color: #ffcc00;
+    padding: 2rem 0;
+ }
 
-    .stats-container {
-        flex-direction: column;
-        align-items: center;
-    }
+ footer {
+    background: rgba(0, 0, 0, 0.9);
+    color: #ffcc00;
+    padding: 2rem 0;
+ }
 
-    .text-center {
-        margin-bottom: 1rem;
-    }
-
-    .btn {
-        width: 100%;
-        margin: 0.5rem 0;
-    }
-
-    .btn-secondary {
-        margin-left: 0;
-    }
+/* Stats Container */
+.stats-container {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 1rem;
 }
 
-/* Profile Information */
-.card-body strong {
-    color: #343a40;
+/* Text Utilities */
+.text-center p {
+    color: #ffcc00;
+}
+
+.text-center h5 {
+    font-size: 2rem;
     font-weight: 600;
+    margin-bottom: 0.5rem;
 }
 
 .text-muted {
@@ -296,41 +264,81 @@ section h4 {
     font-style: italic;
 }
 
-/* Status Colors */
-.text-success {
-    color: #28a745 !important;
+.text-success { color: #28a745 !important; }
+.text-danger { color: #dc3545 !important; }
+.text-warning { color: #ffc107 !important; }
+
+/* Form Styles */
+#login-form { padding-top: 100px; }
+#register-form { padding: 25px; }
+#match-details-box { padding-top: 100px; }
+
+/* Grid System */
+.row {
+    --bs-gutter-x: 1.5rem;
+    --bs-gutter-y: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    margin: calc(var(--bs-gutter-y) * -1) calc(var(--bs-gutter-x) * -0.5);
 }
 
-.text-danger {
-    color: #dc3545 !important;
-}
-
-.text-warning {
-    color: #ffc107 !important;
-}
-#footer-div {
-  position: fixed;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-}
-
-#login-form {
-    padding-top: 100px;
-}
-
+/* Custom Utilities */
 .bg-primary {
     background-color: rgb(0 0 0 / 90%) !important;
 }
 
-#login-register{
-   color: #ffcc00;
+#login-register {
+    color: #ffcc00;
 }
 
-#register-form{
-    padding: 25px;
+/* Responsive Breakpoints */
+@media (max-width: 1200px) {
+    .container {
+        max-width: 95%;
+    }
 }
 
-#match-details-box {
-    padding-top: 100px;
+@media (max-width: 992px) {
+    .navbar-brand {
+        font-size: 1.5rem;
+    }
+    
+    .card {
+        margin-bottom: 1rem;
+    }
 }
+
+@media (max-width: 768px) {
+    .navbar {
+        padding: 0 1rem;
+    }
+
+    .card-body {
+        padding: 1rem;
+    }
+
+    .btn {
+        width: 100%;
+        margin: 0.5rem 0;
+    }
+
+    .stats-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .btn-secondary {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 576px) {
+    .content-container h1 {
+        font-size: 2rem;
+    }
+
+    .content-container p {
+        font-size: 1rem;
+    }
+}
+

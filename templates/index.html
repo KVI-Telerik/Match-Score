@@ -10,76 +10,76 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../static/css/style.css">
     <link rel="icon" href="../static/images/tennis_ball.png" type="image/png">
-
-
 </head>
 <body>
-    <!-- Hero Section with Video Background -->
-    <div class="hero-section">
-        <!-- Video Background -->
-        <video autoplay muted loop class="video-background">
-            <source src="../static/images/backgroundvideo.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
+    <div class="wrapper">
+        <div class="content">
+            <!-- Hero Section with Video Background -->
+            <div class="hero-section">
+                <!-- Video Background -->
+                <video autoplay muted loop class="video-background">
+                    <source src="../static/images/backgroundvideo.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
 
-        <!-- Dark Overlay -->
-        <div class="hero-overlay"></div>
+                <!-- Dark Overlay -->
+                <div class="hero-overlay"></div>
 
-        <!-- Navbar -->
-        {{ load_header(user) }}
-        
+                <!-- Navbar -->
+                {{ load_header(user) }}
 
-        <!-- Hero Content -->
-        <div class="content-container">
-            <div class="container">
-                <h1>Welcome to Tennis Daddy</h1>
-                <p>Your ultimate destination for the latest tennis tournaments and thrilling matches!</p>
-                <a href="/tournaments/" class="btn btn-primary btn-lg mt-3">View Tournaments</a>
+                <!-- Hero Content -->
+                <div class="content-container">
+                    <div class="container">
+                        <h1>Welcome to Tennis Daddy</h1>
+                        <p>Your ultimate destination for the latest tennis tournaments and thrilling matches!</p>
+                        <a href="/tournaments/" class="btn btn-primary btn-lg mt-3">View Tournaments</a>
+                    </div>
+                </div>
             </div>
+
+            <!-- Tournaments Section -->
+            <section id="tournaments" class="container my-5">
+                <h2 class="text-center mb-4">Latest Tournaments</h2>
+                <div class="row">
+                    {% for tournament in latest_tournaments %}
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="card">
+                            <img src="../static/images/tournament.jpg" class="card-img-top" alt="Tournament {{ tournament.title }}">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ tournament.title }}</h5>
+                                <p class="card-text">Format: {{ tournament.format }}</p>
+                                <p class="card-text">Prize: ${{ tournament.prize }}</p>
+                                <a href="/tournaments/{{tournament.id}}" class="btn btn-primary">Learn More</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Upcoming Matches Section -->
+            <section id="matches" class="container my-5">
+                <h2 class="text-center mb-4">Upcoming Matches</h2>
+                <div class="row">
+                    {% for match in upcoming_matches %}
+                    <div class="col-lg-6 mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ match.participants }}</h5>
+                                <p class="card-text">{{ match.date }}</p>
+                                <a href="#" class="btn btn-primary">Match Details</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
         </div>
+
+        <!-- Footer -->
+        {{ load_footer() }}
     </div>
-
-    <!-- Tournaments Section -->
-    <section id="tournaments" class="container my-5">
-        <h2 class="text-center mb-4">Latest Tournaments</h2>
-        <div class="row">
-            {% for tournament in latest_tournaments %}
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="card">
-                    <img src="../static/images/tournament.jpg" class="card-img-top" alt="Tournament {{ tournament.title }}">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ tournament.title }}</h5>
-                        <p class="card-text">Format: {{ tournament.format }}</p>
-                        <p class="card-text">Prize: ${{ tournament.prize }}</p>
-                        <a href="/tournaments/{{tournament.id}}" class="btn btn-primary">Learn More</a>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </section>
-
-    <!-- Upcoming Matches Section -->
-    <section id="matches" class="container my-5">
-        <h2 class="text-center mb-4">Upcoming Matches</h2>
-        <div class="row">
-            {% for match in upcoming_matches %}
-            <div class="col-lg-6 mb-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ match.participants }}</h5>
-                        <p class="card-text">{{ match.date }}</p>
-                        <a href="#" class="btn btn-primary">Match Details</a>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-    </section>
-
-
-    <!-- Footer -->
-    {{ load_footer() }}
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

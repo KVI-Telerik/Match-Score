@@ -12,51 +12,51 @@
     <link rel="icon" href="../static/images/tennis_ball.png" type="image/png">
 </head>
 <body>
-{{ load_header(user) }}
-<div style="margin-top: 120px;">
-    </div>
-<div class="container my-5">
-    <div class="row" id="login-form">
-        <div class="col-md-6 offset-md-3">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h2 class="mb-0">Login</h2>
-                </div>
-                <div class="card-body">
-                    {% if error %}
-                    <div class="alert alert-danger" role="alert">
-                        {{ error }}
-                    </div>
-                    {% endif %}
-                    
-                    <form method="POST" action="/users/login">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                        
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email address</label>
-                            <input type="email" class="form-control" id="email" name="email" required>
+<div class="wrapper">
+    <div class="content">
+        {{ load_header(user) }}
+        <div style="margin-top: 120px;"></div>
+        <div class="container my-5">
+            <div class="row" id="login-form">
+                <div class="col-md-6 offset-md-3">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h2 class="mb-0">Login</h2>
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
+                        <div class="card-body">
+                            {% if error %}
+                            <div class="alert alert-danger" role="alert">
+                                {{ error }}
+                            </div>
+                            {% endif %}
+                            
+                            <form method="POST" action="/users/login">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email address</label>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">Password</label>
+                                    <input type="password" class="form-control" id="password" name="password" required>
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-primary">Login</button>
+                                </div>
+                            </form>
+                            
+                            <div class="mt-3 text-center">
+                                <p>Don't have an account? <a id="login-register" href="/users/register">Register here</a></p>
+                            </div>
                         </div>
-                        
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">Login</button>
-                        </div>
-                    </form>
-                    
-                    <div class="mt-3 text-center">
-                        <p>Don't have an account? <a id="login-register" href="/users/register">Register here</a></p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
-<div id="footer-div">
-
     {{ load_footer() }}
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

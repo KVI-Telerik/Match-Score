@@ -12,65 +12,65 @@
     <link rel="icon" href="../static/images/tennis_ball.png" type="image/png">
 </head>
 <body>
+<div class="wrapper"></div>
+    <div class="content">
+        {{ load_header(user) }}
+        <div style="margin-top: 120px;"></div>
+        <div class="container my-5">
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h2 class="mb-0">{{ tournament.title }}</h2>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h4>Tournament Information</h4>
+                                    <p><strong>Format:</strong> {{ tournament.format }}</p>
+                                    <p><strong>Match Format:</strong> {{ tournament.match_format }}</p>
+                                    <p><strong>Prize:</strong> ${{ tournament.prize }}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h4>Matches</h4>
+                                    <div class="list-group">
+                                        {% for match in tournament.matches %}
+                                        <a href="/matches/{{ match.id }}" class="list-group-item list-group-item-action">
+                                            <div class="d-flex justify-content-between">
+                                                <span>{{ match.participants[0].split("-")[0] }}<br>
 
-{{ load_header(user) }}
-<div style="margin-top: 120px;">
-    </div>
-<div class="container my-5">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h2 class="mb-0">{{ tournament.title }}</h2>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h4>Tournament Information</h4>
-                            <p><strong>Format:</strong> {{ tournament.format }}</p>
-                            <p><strong>Match Format:</strong> {{ tournament.match_format }}</p>
-                            <p><strong>Prize:</strong> ${{ tournament.prize }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h4>Matches</h4>
-                            <div class="list-group">
-                                {% for match in tournament.matches %}
-                                <a href="/matches/{{ match.id }}" class="list-group-item list-group-item-action">
-                                    <div class="d-flex justify-content-between">
-                                        <span>{{ match.participants }}</span>
-                                        <span class="badge bg-primary rounded-pill">{{ match.tournament_type }}</span>
+                                                    {{ match.participants[1].split("-")[0] }}</span>
+                                                <span class="badge bg-primary rounded-pill">{{ match.tournament_type }}</span>
+                                            </div>
+                                            <p class="mb-1">{{ match.date }}</p>
+                                        </a>
+                                        {% endfor %}
                                     </div>
-                                    <p class="mb-1">{{ match.date }}</p>
-                                </a>
-                                {% endfor %}
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                    {% if user and (user.is_admin or user.is_director) %}
-                    <div class="row mt-4">
-                        <div class="col-md-12">
-                            <h4>Tournament Actions</h4>
-                            {% if tournament.format == "Knockout" %}
-                            <form action="/tournaments/{{ tournament.id }}/next_round" method="post" class="d-inline-block">
-                                <button type="submit" class="btn btn-primary">Advance to Next Round</button>
-                            </form>
+                            {% if user and (user.is_admin or user.is_director) %}
+                            <div class="row mt-4">
+                                <div class="col-md-12">
+                                    <h4>Tournament Actions</h4>
+                                    {% if tournament.format == "Knockout" %}
+                                    <form action="/tournaments/{{ tournament.id }}/next_round" method="post" class="d-inline-block">
+                                        <button type="submit" class="btn btn-primary">Advance to Next Round</button>
+                                    </form>
+                                    {% endif %}
+                                    <a href="#" class="btn btn-secondary">Edit Tournament</a>
+                                </div>
+                            </div>
                             {% endif %}
-                            <a href="#" class="btn btn-secondary">Edit Tournament</a>
                         </div>
                     </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
-</div>
-
-
-<div id="footer-div">
-    {{ load_footer() }}
+    <div id="footer-div">
+        {{ load_footer() }}
     </div>
-
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -12,38 +12,37 @@
     <link rel="icon" href="../static/images/tennis_ball.png" type="image/png">
 </head>
 <body>
+    <div class="wrapper">
+        <div class="content">
+            {{ load_header(user) }}
+            <div style="margin-top: 120px;"></div>
 
-{{ load_header(user) }}
-<div style="margin-top: 120px;">
-    </div>
+            <div class="container my-5" id="tournament-list">
+                <h2 class="text-center mb-4">All Tournaments</h2>
 
-<div class="container my-5">
-    <h2 class="text-center mb-4">All Tournaments</h2>
-
-    <div class="row">
-        {% for tournament in tournaments %}
-        <div class="col-lg-4 col-md-6 mb-4">
-            <div class="card">
-                <img src="../static/images/tournament.jpg" class="card-img-top" alt="Tournament Image">
-                <div class="card-body">
-                    <h5 class="card-title">{{ tournament.title }}</h5>
-                    <p class="card-text">
-                        <strong>Format:</strong> {{ tournament.format }}<br>
-                        <strong>Match Format:</strong> {{ tournament.match_format }}<br>
-                        <strong>Prize:</strong> ${{ tournament.prize }}
-                    </p>
-                    <a href="/tournaments/{{ tournament.id }}" class="btn btn-primary">View Tournament</a>
+                <div class="row">
+                    {% for tournament in tournaments %}
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="card">
+                            <img src="../static/images/tournament.jpg" class="card-img-top" alt="Tournament Image">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ tournament.title }}</h5>
+                                <p class="card-text">
+                                    <strong>Format:</strong> {{ tournament.format }}<br>
+                                    <strong>Match Format:</strong> {{ tournament.match_format }}<br>
+                                    <strong>Prize:</strong> ${{ tournament.prize }}
+                                </p>
+                                <a href="/tournaments/{{ tournament.id }}" class="btn btn-primary">View Tournament</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
-        {% endfor %}
+        
+        {{ load_footer() }}
     </div>
-</div>
-
-<div id="footer-div">
-    {{ load_footer() }}
-    </div>
-
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

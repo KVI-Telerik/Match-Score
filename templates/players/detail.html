@@ -12,74 +12,77 @@
     <link rel="icon" href="../static/images/tennis_ball.png" type="image/png">
 </head>
 <body>
-    <!-- Navbar -->
-    {{ load_header(user) }}
+    <div class="wrapper">
+        <div class="content">
+            <!-- Navbar -->
+            {{ load_header(user) }}
 
-    <!-- Player Profile Section -->
-    <div style="margin-top: 120px;">
-    </div>
-    <section class="container my-5">
-        <div class="row">
-            <div class="col-md-8 offset-md-2">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h2 class="mb-0">{{ player.full_name }}</h2>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h4>Profile Information</h4>
-                                <p><strong>Country:</strong> {{ player.country if player.country else "Not specified" }}</p>
-                                <p><strong>Sports Club:</strong> {{ player.sports_club if player.sports_club else "Not specified" }}</p>
+            <!-- Player Profile Section -->
+            <div style="margin-top: 120px;">
+            </div>
+            <section class="container my-5">
+                <div class="row">
+                    <div class="col-md-8 offset-md-2">
+                        <div class="card">
+                            <div class="card-header bg-primary text-white">
+                                <h2 class="mb-0">{{ player.full_name }}</h2>
                             </div>
-                            <div class="col-md-6">
-                                <h4>Statistics</h4>
-                                <div class="d-flex justify-content-around mt-3">
-                                    <div class="text-center">
-                                        <h5 class="text-success">{{ player.wins }}</h5>
-                                        <p class="mb-0">Wins</p>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h4>Profile Information</h4>
+                                        <p><strong>Country:</strong> {{ player.country if player.country else "Not specified" }}</p>
+                                        <p><strong>Sports Club:</strong> {{ player.sports_club if player.sports_club else "Not specified" }}</p>
                                     </div>
-                                    <div class="text-center">
-                                        <h5 class="text-danger">{{ player.losses }}</h5>
-                                        <p class="mb-0">Losses</p>
-                                    </div>
-                                    <div class="text-center">
-                                        <h5 class="text-warning">{{ player.draws }}</h5>
-                                        <p class="mb-0">Draws</p>
+                                    <div class="col-md-6">
+                                        <h4>Statistics</h4>
+                                        <div class="d-flex justify-content-around mt-3">
+                                            <div class="text-center">
+                                                <h5 class="text-success">{{ player.wins }}</h5>
+                                                <p class="mb-0">Wins</p>
+                                            </div>
+                                            <div class="text-center">
+                                                <h5 class="text-danger">{{ player.losses }}</h5>
+                                                <p class="mb-0">Losses</p>
+                                            </div>
+                                            <div class="text-center">
+                                                <h5 class="text-warning">{{ player.draws }}</h5>
+                                                <p class="mb-0">Draws</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <div class="mt-4">
-                            <h4>Tournament History</h4>
-                            {% if player.tournaments and player.tournaments != "N/A" %}
-                                <div class="list-group">
-                                    {% for tournament in player.tournaments %}
-                                        {% if tournament %}
-                                            <div class="list-group-item">{{ tournament }}</div>
-                                        {% endif %}
-                                    {% endfor %}
+                                <div class="mt-4">
+                                    <h4>Tournament History</h4>
+                                    {% if player.tournaments and player.tournaments != "N/A" %}
+                                        <div class="list-group">
+                                            {% for tournament in player.tournaments %}
+                                                {% if tournament %}
+                                                    <div class="list-group-item">{{ tournament }}</div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted">No tournament history available</p>
+                                    {% endif %}
                                 </div>
-                            {% else %}
-                                <p class="text-muted">No tournament history available</p>
-                            {% endif %}
-                        </div>
 
-                        <div class="mt-4">
-                            {% if user and user.is_admin %}
-                                <a href="/players/{{ player.id }}/edit" class="btn btn-primary">Edit Profile</a>
-                            {% endif %}
-                            <a href="/players" class="btn btn-secondary">Back to Players List</a>
+                                <div class="mt-4">
+                                    {% if user and user.is_admin %}
+                                        <a href="/players/{{ player.id }}/edit" class="btn btn-primary">Edit Profile</a>
+                                    {% endif %}
+                                    <a href="/players" class="btn btn-secondary">Back to Players List</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </section>
         </div>
-    </section>
-
-    <!-- Footer -->
-    {{ load_footer() }}
+        <!-- Footer -->
+        {{ load_footer() }}
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
