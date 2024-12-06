@@ -162,8 +162,8 @@ async def get_by_id(match_id: int) -> Optional[Match]:
         participants=participants  
     )
 
-async def get_all() -> List[Dict]:
 
+async def get_all(tournament_search: Optional[str] = None) -> List[Dict]:
     query = """
             SELECT 
                 m.id,
@@ -179,10 +179,16 @@ async def get_all() -> List[Dict]:
             JOIN match_participants mp ON m.id = mp.match_id
             JOIN player_profiles pp ON mp.player_profile_id = pp.id
             LEFT JOIN tournament t ON m.tournament_id = t.id
-            ORDER BY m.date DESC
-        """
+    """
 
-    results = await DatabaseConnection.read_query(query)
+    params = []
+    if tournament_search:
+        query += " WHERE LOWER(t.title) LIKE LOWER($1)"
+        params.append(f"%{tournament_search}%")
+
+    query += " ORDER BY m.date DESC"
+
+    results = await DatabaseConnection.read_query(query, *params)
     if not results:
         return []
 
@@ -197,8 +203,8 @@ async def get_all() -> List[Dict]:
                 "tournament_id": row[3],
                 "tournament_type": row[4],
                 "finished": row[5],
-                "participants": [],
-                "tournament_name": row[8]
+                "tournament_name": row[8],
+                "participants": []
             }
         matches_dict[match_id]["participants"].append(f"{row[6]}-{row[7]}")
 

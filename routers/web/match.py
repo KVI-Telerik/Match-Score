@@ -14,18 +14,23 @@ web_match_router = APIRouter(prefix="/matches")
 
 
 @web_match_router.get("/", response_class=HTMLResponse)
-async def match_list(request: Request):
+async def match_list(request: Request, tournament: str = None):
+    # Existing user authentication logic
     token = request.cookies.get("access_token")
     user = None
     if token:
         payload = validate_token(token)
         user = await user_service.get_user_by_id(payload["id"])
-    matches = await match_service.get_all()
+
+    # Updated to include tournament search
+    matches = await match_service.get_all(tournament_search=tournament)
+
     return templates.TemplateResponse(
         "matches/list.html",
         {"request": request,
          "user": user,
-         "matches": matches}
+         "matches": matches,
+         "search": tournament}  # Add search term to template context
     )
 
 
