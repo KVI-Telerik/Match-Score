@@ -90,11 +90,10 @@ async def all_users() -> List[User]:
 async def get_user_by_id(user_id: int) -> Optional[User]:
     query = "SELECT * FROM users WHERE id = $1"
     user = await DatabaseConnection.read_query(query, user_id)
-    print(user)
+
     if user:
         a= User.from_query_result(*user[0])
-        print(a)
-        print(a.username)
+
         return a
     return None
 

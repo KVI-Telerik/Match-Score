@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Match List - Tennis Daddy</title>
+    <title>Match Details - Tennis Daddy</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     {% from 'macros.html' import load_header, load_footer %}
@@ -14,76 +14,97 @@
 <body>
     <div class="wrapper">
         <div class="content">
-            <!-- Navbar -->
-{{ load_header(user) }}
-<div style="margin-top: 120px;">
-            </div>
-<div class="container my-5" id="match-details-box">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h2 class="mb-0">Match Details</h2>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h4>Match Information</h4>
-                            <p><strong>Format:</strong> {{ match.format }}</p>
-                            <p><strong>Date:</strong> {{ match.date }}</p>
-                            <p><strong>Tournament:</strong> {% if match.tournament_id %} {{ match.tournament_name }} {% else %} N/A {% endif %}</p>
-                            <p><strong>Tournament Type:</strong> {{ match.tournament_type if match.tournament_type else "N/A" }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h4>Participants</h4>
-                            <div class="list-group">
-                                {% for participant in match.participants %}
-                                <div class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span>{{ participant.split('-')[0] }}</span>
-                                    <span class="badge bg-primary rounded-pill">{{ participant.split('-')[1] }}</span>
+            {{ load_header(user) }}
+
+            <!-- Main Content -->
+            <div class="container" style="margin-top: 120px;">
+                <div class="row">
+                    <div class="col-md-8 offset-md-2">
+                        <div class="card shadow">
+                            <div class="card-header bg-primary text-white">
+                                <h2 class="mb-0">Match Details</h2>
+                            </div>
+
+                            <div class="card-body">
+                                <!-- Match Information Section -->
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <h4 class="border-bottom pb-2 mb-3">Match Information</h4>
+                                        <div class="match-info">
+                                            <p><strong class="card-text mb-2">Format:</strong> {{ match.format }}</p>
+                                            <p><strong class="card-text mb-2">Date:</strong> {{ match.date }}</p>
+                                            <p><strong class="card-text mb-2">Tournament:</strong>
+                                                {{ match.tournament_name if match.tournament_name else "N/A" }}
+                                            </p>
+                                            <p><strong class="card-text mb-2">Tournament Type:</strong>
+                                                {{ match.tournament_type if match.tournament_type else "N/A" }}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Participants Section -->
+                                    <div class="col-md-6">
+                                        <h4 class="border-bottom pb-2 mb-3">Participants</h4>
+                                        <div class="list-group">
+                                            {% for participant in match.participants %}
+                                                {% set name, score, player_id = participant.split('-') %}
+                                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                                    <span>{{ name }}</span>
+                                                    <span class="badge bg-primary rounded-pill">{{ score }}</span>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
                                 </div>
-                                {% endfor %}
+
+                                <!-- Admin/Director Controls -->
+                                {% if user and (user.is_admin or user.is_director) %}
+                                    <div class="row mt-4">
+                                        <!-- Score Update Form -->
+                                        <div class="col-md-6 mb-4">
+                                            <h4 class="border-bottom pb-2 mb-3">Update Scores</h4>
+                                            <form action="/matches/{{ match.id }}/score" method="post">
+                                                <div class="mb-3">
+                                                    <label for="player_id" class="form-label">Player:</label>
+                                                    <select class="form-select" id="player_id" name="player_id" required>
+                                                        {% for participant in match.participants %}
+                                                            {% set name, score, player_id = participant.split('-') %}
+                                                            <option value="{{ player_id }}">{{ name }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="score" class="form-label">Score:</label>
+                                                    <input type="number" class="form-control" id="score" name="score" required>
+                                                </div>
+                                                <button type="submit" class="btn btn-primary">Update Score</button>
+                                            </form>
+                                        </div>
+
+                                        <!-- End Match Form -->
+                                        <div class="col-md-6 mb-4">
+                                            <h4 class="border-bottom pb-2 mb-3">End Match</h4>
+                                            <form action="/matches/leagues/{{ match.id }}/end" method="post">
+                                                <button type="submit" class="btn btn-danger"
+                                                        onclick="return confirm('Are you sure you want to end this match?')">
+                                                    End Match
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
-                    {% if user and (user.is_admin or user.is_director) %}
-                    <div class="row mt-4">
-                        <div class="col-md-6">
-                            <h4>Update Scores</h4>
-                            <form action="/matches/{{ match.id }}/score" method="post" class="form-inline">
-                                <div class="form-group mr-2">
-                                    <label for="player_id">Player:</label>
-                                    <select class="form-control" id="player_id" name="player_id">
-                                        {% for participant in match.participants %}
-                                        <option value="{{ loop.index }}">{{ participant.split('-')[0] }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="form-group mr-2">
-                                    <label for="score">Score:</label>
-                                    <input type="number" class="form-control" id="score" name="score">
-                                </div>
-                                <button type="submit" class="btn btn-primary">Update Score</button>
-                            </form>
-                        </div>
-                        <div class="col-md-6">
-                            <h4>End Match</h4>
-                            <form action="/matches/leagues/{{ match.id }}/end" method="post">
-                                <button type="submit" class="btn btn-danger">End Match</button>
-                            </form>
-                        </div>
-                    </div>
-                    {% endif %}
                 </div>
             </div>
         </div>
-    </div>
-</div>
 
-<div id="footer-div">
-    {{ load_footer() }}
+        <!-- Footer -->
+        <div id="footer-div">
+            {{ load_footer() }}
+        </div>
     </div>
-
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
