@@ -67,9 +67,9 @@
                                         <p class="text-muted">No tournament history available</p>
                                     {% endif %}
                                 </div>
-
+                                
                                 <div class="mt-4">
-                                    {% if user and user.is_admin %}
+                                    {% if (profile_linked_user_id == None and user.is_admin) or profile_linked_user_id == user.id %}
                                         <a href="/players/{{ player.id }}/edit" class="btn btn-primary">Edit Profile</a>
                                     {% endif %}
                                     <a href="/players" class="btn btn-secondary">Back to Players List</a>
@@ -80,8 +80,10 @@
                 </div>
             </section>
         </div>
-        <!-- Footer -->
-        {{ load_footer() }}
+
+        <div id="footer-div">
+            {{ load_footer() }}
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

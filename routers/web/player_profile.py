@@ -50,13 +50,15 @@ async def player_detail(request: Request, player_id: int):
         payload = validate_token(token)
         user = await user_service.get_user_by_id(payload["id"])
     player = await player_profile_service.get_profile_by_id(player_id)
+    profile_linked_user_id = await player_profile_service.get_user_id(player_id)
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
     return templates.TemplateResponse(
         "players/detail.html",
         {"request": request,
          "player": player,
-         "user":user}
+         "user":user,
+         "profile_linked_user_id": profile_linked_user_id}
     )
 
 
