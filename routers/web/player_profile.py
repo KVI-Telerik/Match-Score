@@ -44,12 +44,19 @@ async def player_list(
 
 @web_player_router.get("/{player_id}", response_class=HTMLResponse)
 async def player_detail(request: Request, player_id: int):
+    token = request.cookies.get("access_token")
+    user = None
+    if token:
+        payload = validate_token(token)
+        user = await user_service.get_user_by_id(payload["id"])
     player = await player_profile_service.get_profile_by_id(player_id)
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
     return templates.TemplateResponse(
         "players/detail.html",
-        {"request": request, "player": player}
+        {"request": request,
+         "player": player,
+         "user":user}
     )
 
 

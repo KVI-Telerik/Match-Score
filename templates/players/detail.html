@@ -13,7 +13,7 @@
 </head>
 <body>
     <!-- Navbar -->
-    {{ load_header(get_user(request)) }}
+    {{ load_header(user) }}
 
     <!-- Player Profile Section -->
     <div style="margin-top: 120px;">
@@ -67,7 +67,7 @@
                         </div>
 
                         <div class="mt-4">
-                            {% if request.state.user and request.state.user.is_admin %}
+                            {% if user and user.is_admin %}
                                 <a href="/players/{{ player.id }}/edit" class="btn btn-primary">Edit Profile</a>
                             {% endif %}
                             <a href="/players" class="btn btn-secondary">Back to Players List</a>

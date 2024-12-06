@@ -242,22 +242,20 @@ async def get_match_with_scores(match_id: int) -> Optional[Dict]:
 
 
 
-async def update_score(match_id: int, player_id:int , score:int) -> Optional[bool]:
+async def update_score(match_id: int, player_id: int, score: int) -> Optional[bool]:
     match = await get_by_id(match_id)
     if not match:
         return None
-    
 
     query = """
         UPDATE match_participants
         SET score = score + $1
         WHERE match_id = $2 AND player_profile_id = $3
     """
-    success = await DatabaseConnection.update_query(query, score, match_id,player_id)
+    success = await DatabaseConnection.update_query(query, score, match_id, player_id)
     if not success:
         return None
 
-    
     return True
 
 async def reschedule_match(match_id: int, new_date: datetime) -> Optional[Match]:
