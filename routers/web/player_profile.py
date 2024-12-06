@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Request, Form, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
 
+from common.auth_middleware import validate_token
 from common.template_config import CustomJinja2Templates
 from services import player_profile_service, user_service
 from data.models import PlayerProfile, UpdateProfile
@@ -18,6 +19,11 @@ async def player_list(
         page: int = Query(1, ge=1),
         per_page: int = Query(10, ge=1, le=100)
 ):
+    token = request.cookies.get("access_token")
+    user = None
+    if token:
+        payload = validate_token(token)
+        user = await user_service.get_user_by_id(payload["id"])
 
     result = await player_profile_service.get_all(search, page, per_page)
 
@@ -25,6 +31,7 @@ async def player_list(
         "players/list.html",
         {
             "request": request,
+            "user":user,
             "players": result["players"],
             "page": result["page"],
             "total_pages": result["total_pages"],

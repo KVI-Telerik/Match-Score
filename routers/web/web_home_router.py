@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
+
+from common.auth_middleware import validate_token
 from common.template_config import CustomJinja2Templates
-from services import tournament_service, match_service
+from services import tournament_service, match_service, user_service
 from datetime import datetime
 from common.security import csrf
 
@@ -11,6 +13,13 @@ web_home_router = APIRouter()
 
 @web_home_router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
+    token = request.cookies.get("access_token")
+    user = None
+    if token:
+        payload = validate_token(token)
+        user = await user_service.get_user_by_id(payload["id"])
+
+
     tournaments = await tournament_service.get_all()
     matches = await match_service.get_all()
 
@@ -30,6 +39,7 @@ async def home(request: Request):
         "index.html",
         {
             "request": request,
+            "user":user,
             "latest_tournaments": latest_tournaments,
             "upcoming_matches": upcoming_matches  
         }

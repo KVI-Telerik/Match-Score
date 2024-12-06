@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import Request, HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import JWTError
@@ -43,11 +45,13 @@ async def auth_middleware(request: Request, credentials: HTTPAuthorizationCreden
 #         print(f"Error checking admin status: {e}")
 #         return False
 
-def get_user_if_token(request: Request):
+async def get_user_if_token(request: Request):
     token = request.cookies.get("access_token")
     if token:
        payload = validate_token(token)
-       user = get_user_by_id(payload["id"])
+       await asyncio.sleep(0)
+       user = await get_user_by_id(payload["id"])
+       await asyncio.sleep(0)
        print(payload["id"])
        print('-------------')
        print(user)
