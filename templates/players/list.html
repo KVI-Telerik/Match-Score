@@ -10,49 +10,152 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../static/css/style.css">
     <link rel="icon" href="../static/images/tennis_ball.png" type="image/png">
+    <style>
+        .pagination .page-link {
+            color: #000;
+            background-color: #fff;
+            border-color: #ffcc00;
+        }
+        .pagination .page-item.active .page-link {
+            background-color: #ffcc00;
+            border-color: #ffcc00;
+            color: #000;
+        }
+        .pagination .page-link:hover {
+            background-color: #ffe680;
+            border-color: #ffcc00;
+            color: #000;
+        }
+        .page-info {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+    </style>
 </head>
 <body>
     <!-- Navbar -->
-    {{ load_header(get_user(request)) }}
-     <div style="margin-top: 120px;">
-    </div>
+    {{ load_header(user) }}
+    <div style="margin-top: 120px;"></div>
+
     <div class="container my-5">
-        <h1 class="mb-4">Player List</h1>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Players</h1>
+            <div class="d-flex align-items-center">
+                <select class="form-select me-2" style="width: auto;" onchange="updatePerPage(this.value)">
+                    <option value="10" {% if per_page == 10 %}selected{% endif %}>10 per page</option>
+                    <option value="25" {% if per_page == 25 %}selected{% endif %}>25 per page</option>
+                    <option value="50" {% if per_page == 50 %}selected{% endif %}>50 per page</option>
+                </select>
+            </div>
+        </div>
 
         <form action="/players" method="get" class="mb-4">
             <div class="input-group">
-                <input type="text" class="form-control" name="search" placeholder="Search players..." value="{{ request.query_params.get('search', '') }}">
+                <input type="text" class="form-control" name="search" placeholder="Search players..." value="{{ search if search else '' }}">
+                <input type="hidden" name="per_page" value="{{ per_page }}">
+                <input type="hidden" name="page" value="1">
                 <button class="btn btn-primary" type="submit">Search</button>
+                {% if search %}
+                    <a href="/players" class="btn btn-secondary ms-2">Clear Search</a>
+                {% endif %}
             </div>
         </form>
 
-        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-            {% for player in players %}
-            <div class="col">
-                <div class="card h-100">
-                    <div class="card-body d-flex flex-column">
-                        <h5 class="card-title mb-3">{{ player.full_name }}</h5>
-                        <p class="card-text mb-2">
-                            <strong>Country:</strong> {{ player.country if player.country else "Not specified" }}
-                        </p>
-                        <p class="card-text mb-4">
-                            <strong>Sports Club:</strong> {{ player.sports_club if player.sports_club else "Not specified" }}
-                        </p>
-                        <div class="mt-auto">
-                            <a href="/players/{{ player.id }}" class="btn btn-primary">View Profile</a>
+        {% if total == 0 %}
+            <div class="alert alert-info">No players found{% if search %} for "{{ search }}"{% endif %}.</div>
+        {% else %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for player in players %}
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-body d-flex flex-column">
+                            <h5 class="card-title mb-3">{{ player.full_name }}</h5>
+                            <p class="card-text mb-2">
+                                <strong>Country:</strong> {{ player.country if player.country else "N/A" }}
+                            </p>
+                            <p class="card-text mb-4">
+                                <strong>Sports Club:</strong> {{ player.sports_club if player.sports_club else "N/A" }}
+                            </p>
+                            <div class="mt-auto">
+                                <a href="/players/{{ player.id }}" class="btn btn-primary">View Profile</a>
+                            </div>
                         </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
-        </div>
+
+            <!-- Pagination -->
+            <div class="mt-4">
+                <nav aria-label="Player navigation">
+                    <ul class="pagination justify-content-center">
+                        {% if page > 1 %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page - 1 }}{% if search %}&search={{ search }}{% endif %}&per_page={{ per_page }}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% set start = [page - 2, 1] | max %}
+                        {% set end = [start + 4, total_pages] | min %}
+                        {% set start = [end - 4, 1] | max %}
+
+                        {% if start > 1 %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}&per_page={{ per_page }}">1</a>
+                        </li>
+                        {% if start > 2 %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                        {% endif %}
+
+                        {% for p in range(start, end + 1) %}
+                        <li class="page-item {% if p == page %}active{% endif %}">
+                            <a class="page-link" href="?page={{ p }}{% if search %}&search={{ search }}{% endif %}&per_page={{ per_page }}">{{ p }}</a>
+                        </li>
+                        {% endfor %}
+
+                        {% if end < total_pages %}
+                        {% if end < total_pages - 1 %}
+                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                        {% endif %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ total_pages }}{% if search %}&search={{ search }}{% endif %}&per_page={{ per_page }}">{{ total_pages }}</a>
+                        </li>
+                        {% endif %}
+
+                        {% if page < total_pages %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page + 1 }}{% if search %}&search={{ search }}{% endif %}&per_page={{ per_page }}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                <div class="text-center mt-2 page-info">
+                    Showing {{ (page - 1) * per_page + 1 }} to {{ [page * per_page, total] | min }} of {{ total }} players
+                </div>
+            </div>
+        {% endif %}
     </div>
+
+    <div style="margin-bottom: 120px;"></div>
 
     <!-- Footer -->
     <div id="footer-div">
-    {{ load_footer() }}
+        {{ load_footer() }}
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function updatePerPage(value) {
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('per_page', value);
+            currentUrl.searchParams.set('page', '1');
+            window.location.href = currentUrl.toString();
+        }
+    </script>
 </body>
 </html>

@@ -26,7 +26,7 @@
         <div class="hero-overlay"></div>
 
         <!-- Navbar -->
-        {{ load_header(get_user(request)) }}
+        {{ load_header(user) }}
         
 
         <!-- Hero Content -->
@@ -51,7 +51,7 @@
                         <h5 class="card-title">{{ tournament.title }}</h5>
                         <p class="card-text">Format: {{ tournament.format }}</p>
                         <p class="card-text">Prize: ${{ tournament.prize }}</p>
-                        <a href="#" class="btn btn-primary">Learn More</a>
+                        <a href="/tournaments/{{tournament.id}}" class="btn btn-primary">Learn More</a>
                     </div>
                 </div>
             </div>

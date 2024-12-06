@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
+
+from common.auth_middleware import validate_token
 from common.security import InputSanitizer, csrf
 from common.template_config import CustomJinja2Templates
 from services import tournament_service, user_service
 from data.models import Tournament
-
+from fastapi.templating import Jinja2Templates
 
 templates = CustomJinja2Templates(directory="templates")
 web_tournament_router = APIRouter(prefix="/tournaments")
@@ -12,38 +14,27 @@ web_tournament_router = APIRouter(prefix="/tournaments")
 
 @web_tournament_router.get("/", response_class=HTMLResponse)
 async def tournament_list(request: Request, search: str = None):
+    token = request.cookies.get("access_token")
+    user = None
+    if token:
+        payload = validate_token(token)
+        user = await user_service.get_user_by_id(payload["id"])
+
     tournaments = await tournament_service.get_all(search)
     return templates.TemplateResponse(
         "tournaments/list.html",
-        {"request": request, "tournaments": tournaments}
+        {"request": request, "tournaments": tournaments,"user":user}
     )
 
 
-@web_tournament_router.get("/{tournament_id}", response_class=HTMLResponse)
-async def tournament_detail(request: Request, tournament_id: int):
-    tournament = await tournament_service.get_by_id(tournament_id)
-    if not tournament:
-        raise HTTPException(status_code=404, detail="Tournament not found")
 
-    if tournament["format"] == "League":
-        standings = await tournament_service.get_league_standings(tournament_id)
-    else:
-        standings = None
-
-    return templates.TemplateResponse(
-        "tournaments/detail.html",
-        {
-            "request": request,
-            "tournament": tournament,
-            "standings": standings,
-            "csrf_token": csrf.generate_token()
-        }
-    )
 
 
 @web_tournament_router.get("/new", response_class=HTMLResponse)
 async def new_tournament_form(request: Request):
     token = request.cookies.get("access_token")
+    payload = validate_token(token)
+    user = await user_service.get_user_by_id(payload["id"])
     if not token:
         return RedirectResponse(url="/users/login", status_code=302)
 
@@ -53,7 +44,10 @@ async def new_tournament_form(request: Request):
 
     return templates.TemplateResponse(
         "tournaments/new.html",
-        {"request": request}
+        {"request": request,
+         "user":user
+         },
+
     )
 
 
@@ -63,6 +57,8 @@ async def create_tournament(
     sanitized_data: dict = Depends(InputSanitizer.sanitize_form_data)
 ):
     token = request.cookies.get("access_token")
+    payload = validate_token(token)
+    user = await user_service.get_user_by_id(payload["id"])
     if not token:
         return RedirectResponse(url="/users/login", status_code=302)
 
@@ -86,6 +82,34 @@ async def create_tournament(
             {"request": request, "error": "Failed to create tournament"}
         )
     return RedirectResponse(url="/tournaments", status_code=302)
+
+@web_tournament_router.get("/{tournament_id}", response_class=HTMLResponse)
+async def tournament_detail(request: Request, tournament_id: int):
+    token = request.cookies.get("access_token")
+    user = None
+    if token:
+        payload = validate_token(token)
+        user = await user_service.get_user_by_id(payload["id"])
+
+    tournament = await tournament_service.get_by_id(tournament_id)
+    if not tournament:
+        raise HTTPException(status_code=404, detail="Tournament not found")
+
+    if tournament["format"] == "League":
+        standings = await tournament_service.get_league_standings(tournament_id)
+    else:
+        standings = None
+
+    return templates.TemplateResponse(
+        "tournaments/detail.html",
+        {
+            "request": request,
+            "user":user,
+            "tournament": tournament,
+            "standings": standings,
+            "csrf_token": csrf.generate_token()
+        }
+    )
 
 
 @web_tournament_router.post("/{id}/next_round")

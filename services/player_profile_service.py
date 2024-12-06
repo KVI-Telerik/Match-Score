@@ -154,16 +154,59 @@ async def delete_player_profile(player_profile_id: int):
         print(f"Error during player profile deletion: {str(e)}")
         return False
 
-async def get_all(search: str = None):
-    query = """
+
+async def get_all(search: str = None, page: int = 1, per_page: int = 10):
+
+
+    offset = (page - 1) * per_page
+
+
+    count_query = """
+        SELECT COUNT(*) 
+        FROM player_profiles
+    """
+
+
+    data_query = """
         SELECT id, full_name, country, sports_club, wins, losses, draws
         FROM player_profiles
     """
-    if search:
-        query += f" WHERE full_name ILIKE '%{search}%'"
 
-    results = await DatabaseConnection.read_query(query)
-    return [PlayerProfile.from_query_result(*result) for result in results] if results else []
+
+    if search:
+        search_condition = " WHERE LOWER(full_name) LIKE LOWER($1)"
+        count_query += search_condition
+        data_query += search_condition
+        search_pattern = f'%{search}%'
+
+
+        total_count = await DatabaseConnection.read_query(count_query, search_pattern)
+
+
+        data_query += " ORDER BY id LIMIT $2 OFFSET $3"
+        results = await DatabaseConnection.read_query(data_query, search_pattern, per_page, offset)
+    else:
+
+        total_count = await DatabaseConnection.read_query(count_query)
+
+
+        data_query += " ORDER BY id LIMIT $1 OFFSET $2"
+        results = await DatabaseConnection.read_query(data_query, per_page, offset)
+
+
+    total_items = total_count[0][0]
+    total_pages = (total_items + per_page - 1) // per_page
+
+
+    players = [PlayerProfile.from_query_result(*result) for result in results] if results else []
+
+    return {
+        "players": players,
+        "total": total_items,
+        "page": page,
+        "total_pages": total_pages,
+        "per_page": per_page
+    }
 
 async def get_profile_by_id(player_profile_id: int):
     query = """

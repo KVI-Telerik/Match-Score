@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
+
+from common.auth_middleware import validate_token
 from common.security import InputSanitizer
 from common.template_config import CustomJinja2Templates
 from services import match_service, user_service
@@ -12,23 +14,27 @@ web_match_router = APIRouter(prefix="/matches")
 
 
 @web_match_router.get("/", response_class=HTMLResponse)
-async def match_list(request: Request):
-    matches = await match_service.get_all()
+async def match_list(request: Request, tournament: str = None):
+    # Existing user authentication logic
+    token = request.cookies.get("access_token")
+    user = None
+    if token:
+        payload = validate_token(token)
+        user = await user_service.get_user_by_id(payload["id"])
+
+    # Updated to include tournament search
+    matches = await match_service.get_all(tournament_search=tournament)
+
     return templates.TemplateResponse(
         "matches/list.html",
-        {"request": request, "matches": matches}
+        {"request": request,
+         "user": user,
+         "matches": matches,
+         "search": tournament}  # Add search term to template context
     )
 
 
-@web_match_router.get("/{match_id}", response_class=HTMLResponse)
-async def match_detail(request: Request, match_id: int):
-    match = await match_service.get_match_with_scores(match_id)
-    if not match:
-        raise HTTPException(status_code=404, detail="Match not found")
-    return templates.TemplateResponse(
-        "matches/detail.html",
-        {"request": request, "match": match}
-    )
+
 
 
 @web_match_router.get("/new", response_class=HTMLResponse)
@@ -76,6 +82,23 @@ async def create_match(
             {"request": request, "error": "Failed to create match"}
         )
     return RedirectResponse(url="/matches", status_code=302)
+
+@web_match_router.get("/{match_id}", response_class=HTMLResponse)
+async def match_detail(request: Request, match_id: int):
+    token = request.cookies.get("access_token")
+    user = None
+    if token:
+        payload = validate_token(token)
+        user = await user_service.get_user_by_id(payload["id"])
+    match = await match_service.get_match_with_scores(match_id)
+    if not match:
+        raise HTTPException(status_code=404, detail="Match not found")
+    return templates.TemplateResponse(
+        "matches/detail.html",
+        {"request": request,
+         "user": user,
+         "match": match}
+    )
 
 
 @web_match_router.post("/{match_id}/score")

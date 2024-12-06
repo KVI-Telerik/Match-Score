@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create New Tournament</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    {% from 'macros.html' import load_header, load_footer %}
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../static/css/style.css">
+    <link rel="icon" href="../static/images/tennis_ball.png" type="image/png">
+</head>
+<body>
+
+{{ load_header(user) }}
+<div style="margin-top: 120px;"></div>
+
+<div class="container my-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="mb-0">Create New Tournament</h2>
+                </div>
+                <div class="card-body">
+                    <form action="/tournaments/new" method="post">
+                        <!-- CSRF Token -->
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Tournament Title</label>
+                            <input type="text" class="form-control" id="title" name="title" required
+                                   minlength="3" maxlength="50">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="format" class="form-label">Tournament Format</label>
+                            <select class="form-control" id="format" name="format" required>
+                                <option value="">Select Format</option>
+                                <option value="Knockout">Knockout</option>
+                                <option value="League">League</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="match_format" class="form-label">Match Format</label>
+                            <select class="form-control" id="match_format" name="match_format" required>
+                                <option value="">Select Match Format</option>
+                                <option value="Time limited">Time Limited (60 minutes)</option>
+                                <option value="Score limited">Score Limited (First to 9 points)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="prize" class="form-label">Prize Amount ($)</label>
+                            <input type="number" class="form-control" id="prize" name="prize"
+                                   min="0" step="1" value="0">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="participants" class="form-label">Participants</label>
+                            <textarea class="form-control" id="participants" name="participants"
+                                      rows="4" required
+                                      placeholder="Enter player names, separated by commas"></textarea>
+                            <small class="form-text text-muted">
+                                Enter at least 2 participants. For knockout tournaments,
+                                the total number must be even. Separate names with commas.
+                            </small>
+                        </div>
+
+                        {% if error %}
+                        <div class="alert alert-danger" role="alert">
+                            {{ error }}
+                        </div>
+                        {% endif %}
+
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">Create Tournament</button>
+                            <a href="/tournaments" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="footer-div">
+    {{ load_footer() }}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
