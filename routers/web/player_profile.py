@@ -117,12 +117,16 @@ async def player_detail(request: Request, player_id: int):
     profile_linked_user_id = await player_profile_service.get_user_id(player_id)
     if not player:
         raise HTTPException(status_code=404, detail="Player not found")
+        
+    statistics = await player_profile_service.get_statistics(player_id)
+    
     return templates.TemplateResponse(
         "players/detail.html",
         {"request": request,
          "player": player,
-         "user":user,
+         "user": user,
          "profile_linked_user_id": profile_linked_user_id,
+         "statistics": statistics,
          "csrf_token": csrf.generate_token()}
     )
 
@@ -181,3 +185,35 @@ async def claim_player_profile(request: Request):
             detail="Player profile with such name can't be claimed or does not exist"
         )
     return RedirectResponse(url="/players", status_code=302)
+
+@web_player_router.post("/{player_id}/delete", response_class=HTMLResponse)
+async def delete_player(
+    request: Request,
+    player_id: int,
+    csrf_token: str = Form(...),
+):
+    # Verify CSRF token
+    if not csrf.validate_token(csrf_token):
+        raise HTTPException(status_code=400, detail="Invalid CSRF token")
+        
+   
+    token = request.cookies.get("access_token")
+    if not token:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+        
+    payload = await user_service.validate_token_with_session(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
+        
+    user = await user_service.get_user_by_id(payload["id"])
+    
+    
+    profile_linked_user_id = await player_profile_service.get_user_id(player_id)
+    if not user.is_admin and user.id != profile_linked_user_id:
+        raise HTTPException(status_code=403, detail="Not authorized to delete this profile")
+    
+    
+    await player_profile_service.delete_player_profile(player_id)
+    
+    
+    return RedirectResponse(url="/players", status_code=303)

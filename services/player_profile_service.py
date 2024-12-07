@@ -234,3 +234,54 @@ async def get_profile_by_id(player_profile_id: int):
         "tournaments": profile_data[7::] if  profile_data[7] else "N/A"
     }
     return player_profile_result
+
+async def get_statistics(player_profile_id: int):
+    # First query to get tournament participation
+    tournament_query = """
+        SELECT DISTINCT t.id, t.title
+        FROM tournament t
+        JOIN tournament_participants tp ON t.id = tp.tournament_id
+        WHERE tp.player_profile_id = $1
+    """
+    
+    # Second query to get match and opponent data
+    match_query = """
+        WITH player_matches AS (
+            SELECT 
+                m.*,
+                mp.score as player_score,
+                mp2.player_profile_id as opponent_id,
+                mp2.score as opponent_score,
+                pp.full_name as opponent_name
+            FROM match m
+            JOIN match_participants mp ON m.id = mp.match_id
+            JOIN match_participants mp2 ON m.id = mp2.match_id
+            LEFT JOIN player_profiles pp ON mp2.player_profile_id = pp.id
+            WHERE mp.player_profile_id = $1
+            AND mp2.player_profile_id != $1
+            AND m.finished = true
+        )
+        SELECT opponent_id, opponent_name, COUNT(*) as matches_count
+        FROM player_matches
+        GROUP BY opponent_id, opponent_name
+        ORDER BY matches_count DESC
+    """
+    
+    # Execute both queries
+    tournaments = await DatabaseConnection.read_query(tournament_query, player_profile_id)
+    matches = await DatabaseConnection.read_query(match_query, player_profile_id)
+    
+    # Process opponents
+    most_frequent = {"name": None, "matches": 0}
+    if matches:
+        most_frequent = {
+            "name": matches[0]["opponent_name"],
+            "matches": matches[0]["matches_count"]
+        }
+    
+    return {
+        "total_matches": sum(m["matches_count"] for m in matches) if matches else 0,
+        "tournaments_played": len(tournaments),
+        "tournament_names": [t["title"] for t in tournaments],
+        "most_frequent_opponent": most_frequent
+    }

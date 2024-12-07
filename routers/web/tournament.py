@@ -110,6 +110,7 @@ async def tournament_detail(request: Request, tournament_id: int):
             "request": request,
             "user":user,
             "tournament": tournament,
+            "tournament_id": tournament_id,
             "standings": standings,
             "csrf_token": csrf.generate_token()
         }

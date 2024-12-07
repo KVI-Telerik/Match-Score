@@ -24,43 +24,77 @@
                 <div class="row">
                     <div class="col-md-8 offset-md-2">
                         <div class="card">
-                            <div class="card-header bg-primary text-white">
+                            <div class="card-header bg-dark text-warning">
                                 <h2 class="mb-0">{{ player.full_name }}</h2>
                             </div>
-                            <div class="card-body">
+                            <div class="card-body bg-dark text-light">
                                 <div class="row">
+                                    <!-- Profile Information -->
                                     <div class="col-md-6">
-                                        <h4>Profile Information</h4>
-                                        <p><strong>Country:</strong> {{ player.country if player.country else "Not specified" }}</p>
-                                        <p><strong>Sports Club:</strong> {{ player.sports_club if player.sports_club else "Not specified" }}</p>
+                                        <h4 class="text-warning">Profile Information</h4>
+                                        <p><strong class="text-warning">Country:</strong> {{ player.country if player.country else "N/A" }}</p>
+                                        <p><strong class="text-warning">Sports Club:</strong> {{ player.sports_club if player.sports_club else "N/A" }}</p>
                                     </div>
+                                    
+                                    <!-- Basic Statistics -->
                                     <div class="col-md-6">
-                                        <h4>Statistics</h4>
+                                        <h4 class="text-warning">Statistics</h4>
                                         <div class="d-flex justify-content-around mt-3">
                                             <div class="text-center">
                                                 <h5 class="text-success">{{ player.wins }}</h5>
-                                                <p class="mb-0">Wins</p>
+                                                <p class="mb-0 text-light">Wins</p>
                                             </div>
                                             <div class="text-center">
                                                 <h5 class="text-danger">{{ player.losses }}</h5>
-                                                <p class="mb-0">Losses</p>
+                                                <p class="mb-0 text-light">Losses</p>
                                             </div>
                                             <div class="text-center">
                                                 <h5 class="text-warning">{{ player.draws }}</h5>
-                                                <p class="mb-0">Draws</p>
+                                                <p class="mb-0 text-light">Draws</p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-
+                        
+                                <!-- Performance Analysis -->
+                                <div class="row mt-4">
+                                    <div class="col-12">
+                                        <h4 class="text-warning">Performance Analysis</h4>
+                                        <div class="table-responsive">
+                                            <table class="table table-dark table-bordered">
+                                                <tbody>
+                                                    <tr>
+                                                        <td><strong class="text-warning">Total Matches:</strong></td>
+                                                        <td>{{ statistics.total_matches }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><strong class="text-warning">Tournaments Played:</strong></td>
+                                                        <td>{{ statistics.tournaments_played }}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><strong class="text-warning">Most Frequent Opponent:</strong></td>
+                                                        <td>
+                                                            {% if statistics.most_frequent_opponent.name %}
+                                                                {{ statistics.most_frequent_opponent.name }} 
+                                                                ({{ statistics.most_frequent_opponent.matches }} matches)
+                                                            {% else %}
+                                                                No data available
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                        
+                                <!-- Tournament History -->
                                 <div class="mt-4">
-                                    <h4>Tournament History</h4>
-                                    {% if player.tournaments and player.tournaments != "N/A" %}
+                                    <h4 class="text-warning">Tournament History</h4>
+                                    {% if statistics.tournament_names %}
                                         <div class="list-group">
-                                            {% for tournament in player.tournaments %}
-                                                {% if tournament %}
-                                                    <div class="list-group-item">{{ tournament }}</div>
-                                                {% endif %}
+                                            {% for tournament in statistics.tournament_names %}
+                                                <div class="list-group-item bg-dark text-light border-warning">{{ tournament }}</div>
                                             {% endfor %}
                                         </div>
                                     {% else %}
@@ -68,9 +102,17 @@
                                     {% endif %}
                                 </div>
                                 
+                                <!-- Action Buttons -->
                                 <div class="mt-4">
                                     {% if (profile_linked_user_id == None and user.is_admin) or profile_linked_user_id == user.id %}
-                                        <a href="/players/{{ player.id }}/edit" class="btn btn-primary">Edit Profile</a>
+                                        <a href="/players/{{ player.id }}/edit" class="btn btn-warning me-2">Edit Profile</a>
+                                        {% if user.is_admin%}
+                                        <form action="/players/{{ player.id }}/delete" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this player profile?');">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                            <input type="hidden" name="player_id" value="{{ player.id }}">
+                                            <button type="submit" class="btn btn-danger me-2">Delete Profile</button>
+                                        </form>
+                                        {% endif %}
                                     {% endif %}
                                     <a href="/players" class="btn btn-secondary">Back to Players List</a>
                                 </div>
@@ -80,11 +122,15 @@
                 </div>
             </section>
         </div>
+    </div>
+
+
+
 
         <div id="footer-div">
             {{ load_footer() }}
         </div>
-    </div>
+    
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
