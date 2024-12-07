@@ -15,6 +15,7 @@ from routers.web.player_profile import web_player_router
 from routers.web.tournament import web_tournament_router
 from routers.web.user import web_users_router
 from routers.web.web_home_router import web_home_router
+from services import user_service
 from services.user_service import validate_token_with_session, SessionManager
 from jose import JWTError
 
@@ -56,6 +57,8 @@ async def test_rate_limit_status():
 async def session_middleware(request: Request, call_next):
     """Middleware to track user activity and validate sessions"""
 
+    await user_service.cleanup_expired_sessions()
+
     if request.url.path.startswith("/static/"):
         return await call_next(request)
     is_api_route = request.url.path.startswith("/api/")
@@ -69,7 +72,7 @@ async def session_middleware(request: Request, call_next):
         "/docs",
         "/redoc",
         "/openapi.json",
-        "/",
+        "/",  # Home page should be public
         "/tournaments",
         "/tournaments/",
         "/matches",
@@ -78,6 +81,7 @@ async def session_middleware(request: Request, call_next):
         "/players/"
     }
 
+    # Check if the path is a public detail page
     if any(
         request.url.path.startswith(prefix) and request.url.path[len(prefix):].replace("/", "").isdigit()
         for prefix in ["/matches/", "/players/", "/tournaments/"]
@@ -90,6 +94,7 @@ async def session_middleware(request: Request, call_next):
     if is_api_route:
         # Handle API authentication
         auth_header = request.headers.get("token")
+        request.state.user = None
         if not auth_header:
             raise HTTPException(status_code=401, detail="Authorization header missing")
             
@@ -123,7 +128,6 @@ async def session_middleware(request: Request, call_next):
 @app.middleware("http")
 async def security_middleware(request: Request, call_next):
     """Global security middleware"""
-    # Don't apply security headers to OpenAPI endpoints
     if request.url.path in ["/docs", "/redoc", "/openapi.json"]:
         return await call_next(request)
         

@@ -16,8 +16,9 @@ async def home(request: Request):
     token = request.cookies.get("access_token")
     user = None
     if token:
-        payload = validate_token(token)
-        user = await user_service.get_user_by_id(payload["id"])
+        payload = await user_service.validate_token_with_session(token)
+        if payload:
+            user = await user_service.get_user_by_id(payload["id"])
 
 
     tournaments = await tournament_service.get_all()

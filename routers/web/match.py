@@ -19,8 +19,9 @@ async def match_list(request: Request, tournament: str = None):
     token = request.cookies.get("access_token")
     user = None
     if token:
-        payload = validate_token(token)
-        user = await user_service.get_user_by_id(payload["id"])
+        payload = await user_service.validate_token_with_session(token)
+        if payload:
+            user = await user_service.get_user_by_id(payload["id"])
 
     # Updated to include tournament search
     matches = await match_service.get_all(tournament_search=tournament)
@@ -88,8 +89,10 @@ async def match_detail(request: Request, match_id: int):
     token = request.cookies.get("access_token")
     user = None
     if token:
-        payload = validate_token(token)
-        user = await user_service.get_user_by_id(payload["id"])
+        payload = await user_service.validate_token_with_session(token)
+        if payload:
+            user = await user_service.get_user_by_id(payload["id"])
+            
     match = await match_service.get_match_with_scores(match_id)
     if not match:
         raise HTTPException(status_code=404, detail="Match not found")

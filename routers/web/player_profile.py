@@ -23,8 +23,9 @@ async def player_list(
     token = request.cookies.get("access_token")
     user = None
     if token:
-        payload = validate_token(token)
-        user = await user_service.get_user_by_id(payload["id"])
+        payload = await user_service.validate_token_with_session(token)
+        if payload:
+            user = await user_service.get_user_by_id(payload["id"])
 
     result = await player_profile_service.get_all(search, page, per_page)
 
@@ -108,8 +109,10 @@ async def player_detail(request: Request, player_id: int):
     token = request.cookies.get("access_token")
     user = None
     if token:
-        payload = validate_token(token)
-        user = await user_service.get_user_by_id(payload["id"])
+        payload = await user_service.validate_token_with_session(token)
+        if payload:
+            user = await user_service.get_user_by_id(payload["id"])
+            
     player = await player_profile_service.get_profile_by_id(player_id)
     profile_linked_user_id = await player_profile_service.get_user_id(player_id)
     if not player:

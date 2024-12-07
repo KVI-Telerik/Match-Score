@@ -4,7 +4,7 @@ import logging
 from common.template_config import CustomJinja2Templates
 from data.models import User, UserLogin
 from services import user_service
-from common.security import InputSanitizer, csrf
+from common.security import InputSanitizer, csrf, verify_csrf_token
 
 templates = CustomJinja2Templates(directory="templates")
 web_users_router = APIRouter(prefix="/users")
@@ -107,19 +107,24 @@ async def logout(request: Request):
     
     if token:
         try:
+            # Get user ID before invalidating session
             payload = await user_service.validate_token_with_session(token)
             if payload:
                 user_id = payload.get("id")
-                await user_service.logout_user(token)  
-                user_service.SessionManager.clear_session(user_id)  
+                # Clear session first
+                user_service.SessionManager.clear_session(user_id)
+                # Then invalidate user token
+                await user_service.logout_user(token)
         except Exception as e:
             print(f"Error during logout: {str(e)}")
+
+    # Create response that redirects to home
+    response = RedirectResponse(url="/", status_code=303)  # Using 303 See Other for POST redirect
     
-    response = RedirectResponse(url="/", status_code=302)
-    
+    # Ensure cookie is completely removed
     response.delete_cookie(
         key="access_token",
-        path="/",  
+        path="/",
         secure=True,
         httponly=True,
         samesite="lax"

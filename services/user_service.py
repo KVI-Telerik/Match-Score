@@ -79,7 +79,20 @@ class SessionManager:
         """Removes a user's session"""
         if user_id in cls._sessions:
             del cls._sessions[user_id]
-        return False
+            print(f"Session cleared for user {user_id}")  # Debug log
+        cls._cleanup_all()  # Force cleanup
+
+    @classmethod
+    def _cleanup_all(cls):
+        """Force cleanup of all expired sessions"""
+        expired_users = []
+        for user_id in cls._sessions:
+            if not cls.is_session_active(user_id):
+                expired_users.append(user_id)
+        
+        for user_id in expired_users:
+            if user_id in cls._sessions:
+                del cls._sessions[user_id]
 
 async def all_users() -> List[User]:
     query = "SELECT * FROM users"

@@ -17,8 +17,10 @@ async def tournament_list(request: Request, search: str = None):
     token = request.cookies.get("access_token")
     user = None
     if token:
-        payload = validate_token(token)
-        user = await user_service.get_user_by_id(payload["id"])
+        payload = await user_service.validate_token_with_session(token)
+        if payload:
+            user = await user_service.get_user_by_id(payload["id"])
+        
 
     tournaments = await tournament_service.get_all(search)
     return templates.TemplateResponse(
@@ -33,7 +35,7 @@ async def tournament_list(request: Request, search: str = None):
 @web_tournament_router.get("/new", response_class=HTMLResponse)
 async def new_tournament_form(request: Request):
     token = request.cookies.get("access_token")
-    payload = validate_token(token)
+    payload = await user_service.validate_token_with_session(token)
     user = await user_service.get_user_by_id(payload["id"])
     if not token:
         return RedirectResponse(url="/users/login", status_code=302)
@@ -58,7 +60,7 @@ async def create_tournament(
     sanitized_data: dict = Depends(InputSanitizer.sanitize_form_data)
 ):
     token = request.cookies.get("access_token")
-    payload = validate_token(token)
+    payload = await user_service.validate_token_with_session(token)
     user = await user_service.get_user_by_id(payload["id"])
     if not token:
         return RedirectResponse(url="/users/login", status_code=302)
@@ -89,8 +91,9 @@ async def tournament_detail(request: Request, tournament_id: int):
     token = request.cookies.get("access_token")
     user = None
     if token:
-        payload = validate_token(token)
-        user = await user_service.get_user_by_id(payload["id"])
+        payload = await user_service.validate_token_with_session(token)
+        if payload:
+            user = await user_service.get_user_by_id(payload["id"])
 
     tournament = await tournament_service.get_by_id(tournament_id)
     if not tournament:
