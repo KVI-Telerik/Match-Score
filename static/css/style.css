@@ -291,6 +291,11 @@ section h4 {
     color: #ffcc00;
 }
 
+.input-group {
+    width: 50%;
+}
+
+
 /* Responsive Breakpoints */
 @media (max-width: 1200px) {
     .container {

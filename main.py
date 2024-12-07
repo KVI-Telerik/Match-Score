@@ -77,6 +77,12 @@ async def session_middleware(request: Request, call_next):
         "/players",
         "/players/"
     }
+
+    if any(
+        request.url.path.startswith(prefix) and request.url.path[len(prefix):].replace("/", "").isdigit()
+        for prefix in ["/matches/", "/players/", "/tournaments/"]
+    ):
+        return await call_next(request)
     
     if request.url.path in public_paths:
         return await call_next(request)

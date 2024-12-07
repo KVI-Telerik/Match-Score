@@ -61,13 +61,17 @@
                         {% if search %}
                             <a href="/players" class="btn btn-secondary ms-2">Clear Search</a>
                         {% endif %}
+                        {% if user and user.is_admin %}
+                            <a href="/players/new" class="btn btn-primary ms-2">Add new player</a>
+                        {% endif %}
                     </div>
                 </form>
+                
 
                 {% if total == 0 %}
                     <div class="alert alert-info">No players found{% if search %} for "{{ search }}"{% endif %}.</div>
                 {% else %}
-                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">                     
                         {% for player in players %}
                         <div class="col">
                             <div class="card h-100">

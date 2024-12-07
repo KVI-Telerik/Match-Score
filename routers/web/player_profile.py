@@ -42,39 +42,26 @@ async def player_list(
     )
 
 
-@web_player_router.get("/{player_id}", response_class=HTMLResponse)
-async def player_detail(request: Request, player_id: int):
-    token = request.cookies.get("access_token")
-    user = None
-    if token:
-        payload = validate_token(token)
-        user = await user_service.get_user_by_id(payload["id"])
-    player = await player_profile_service.get_profile_by_id(player_id)
-    profile_linked_user_id = await player_profile_service.get_user_id(player_id)
-    if not player:
-        raise HTTPException(status_code=404, detail="Player not found")
-    return templates.TemplateResponse(
-        "players/detail.html",
-        {"request": request,
-         "player": player,
-         "user":user,
-         "profile_linked_user_id": profile_linked_user_id}
-    )
 
 
 @web_player_router.get("/new", response_class=HTMLResponse)
 async def new_player_form(request: Request):
     token = request.cookies.get("access_token")
+    user = None
     if not token:
         return RedirectResponse(url="/users/login", status_code=302)
 
+    payload = validate_token(token)
+    user = await user_service.get_user_by_id(payload["id"])
     is_admin = await user_service.is_admin(token)
     if not is_admin:
         raise HTTPException(status_code=403, detail="Admin access required")
 
     return templates.TemplateResponse(
         "players/new.html",
-        {"request": request}
+        {"request": request,
+          "user": user,
+          "csrf_token": csrf.generate_token()}
     )
 
 
@@ -107,6 +94,25 @@ async def create_player(
             {"request": request, "error": "Failed to create player"}
         )
     return RedirectResponse(url="/players", status_code=302)
+
+@web_player_router.get("/{player_id}", response_class=HTMLResponse)
+async def player_detail(request: Request, player_id: int):
+    token = request.cookies.get("access_token")
+    user = None
+    if token:
+        payload = validate_token(token)
+        user = await user_service.get_user_by_id(payload["id"])
+    player = await player_profile_service.get_profile_by_id(player_id)
+    profile_linked_user_id = await player_profile_service.get_user_id(player_id)
+    if not player:
+        raise HTTPException(status_code=404, detail="Player not found")
+    return templates.TemplateResponse(
+        "players/detail.html",
+        {"request": request,
+         "player": player,
+         "user":user,
+         "profile_linked_user_id": profile_linked_user_id}
+    )
 
 
 @web_player_router.get("/{player_id}/edit", response_class=HTMLResponse)
