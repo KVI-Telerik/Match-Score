@@ -101,28 +101,28 @@ async def profile_page(request: Request):
         }
     )
 
-@web_users_router.get("/logout")
+@web_users_router.post("/logout")
 async def logout(request: Request):
-    # Get the access token from cookies
     token = request.cookies.get("access_token")
     
     if token:
         try:
-            # Call the user service logout function to clear the session
-            await user_service.logout_user(token)
+            payload = await user_service.validate_token_with_session(token)
+            if payload:
+                user_id = payload.get("id")
+                await user_service.logout_user(token)  
+                user_service.SessionManager.clear_session(user_id)  
         except Exception as e:
-            logger.error(f"Error during logout: {str(e)}")
-            # Continue with logout even if session clearing fails
-            pass
-
+            print(f"Error during logout: {str(e)}")
+    
     response = RedirectResponse(url="/", status_code=302)
     
     response.delete_cookie(
         key="access_token",
-        httponly=True,
+        path="/",  
         secure=True,
-        samesite="lax",
-        path="/"
+        httponly=True,
+        samesite="lax"
     )
     
     return response

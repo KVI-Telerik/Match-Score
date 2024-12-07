@@ -23,7 +23,7 @@ async def tournament_list(request: Request, search: str = None):
     tournaments = await tournament_service.get_all(search)
     return templates.TemplateResponse(
         "tournaments/list.html",
-        {"request": request, "tournaments": tournaments,"user":user}
+        {"request": request, "tournaments": tournaments,"user":user, "csrf_token": csrf.generate_token()}
     )
 
 
@@ -45,8 +45,9 @@ async def new_tournament_form(request: Request):
     return templates.TemplateResponse(
         "tournaments/new.html",
         {"request": request,
-         "user":user
-         },
+         "user":user,
+        "csrf_token": csrf.generate_token()
+        }
 
     )
 
@@ -79,7 +80,7 @@ async def create_tournament(
     if not result:
         return templates.TemplateResponse(
             "tournaments/new.html",
-            {"request": request, "error": "Failed to create tournament"}
+            {"request": request, "error": "Failed to create tournament", "csrf_token": csrf.generate_token()}
         )
     return RedirectResponse(url="/tournaments", status_code=302)
 

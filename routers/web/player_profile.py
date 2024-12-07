@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Request, Form, HTTPException, Query
 from fastapi.responses import HTMLResponse, RedirectResponse
+from jose import JWTError
 
 from common.auth_middleware import validate_token
 from common.template_config import CustomJinja2Templates
@@ -37,7 +38,8 @@ async def player_list(
             "total_pages": result["total_pages"],
             "total": result["total"],
             "search": search,
-            "per_page": per_page
+            "per_page": per_page,
+            "csrf_token": csrf.generate_token()
         }
     )
 
@@ -51,18 +53,24 @@ async def new_player_form(request: Request):
     if not token:
         return RedirectResponse(url="/users/login", status_code=302)
 
-    payload = validate_token(token)
-    user = await user_service.get_user_by_id(payload["id"])
-    is_admin = await user_service.is_admin(token)
-    if not is_admin:
-        raise HTTPException(status_code=403, detail="Admin access required")
+    try:
+        payload = await user_service.validate_token_with_session(token)  
+        if not payload:
+            return RedirectResponse(url="/users/login", status_code=302)
+            
+        user = await user_service.get_user_by_id(payload["id"])
+        is_admin = await user_service.is_admin(token)
+        if not is_admin:
+            raise HTTPException(status_code=403, detail="Admin access required")
 
-    return templates.TemplateResponse(
-        "players/new.html",
-        {"request": request,
-          "user": user,
-          "csrf_token": csrf.generate_token()}
-    )
+        return templates.TemplateResponse(
+            "players/new.html",
+            {"request": request,
+             "user": user,
+             "csrf_token": csrf.generate_token()}
+        )
+    except JWTError:
+        return RedirectResponse(url="/users/login", status_code=302)
 
 
 @web_player_router.post("/new")
@@ -82,16 +90,16 @@ async def create_player(
         full_name=sanitized_data.get("full_name"),
         country=sanitized_data.get("country"),
         sports_club=sanitized_data.get("sports_club"),
-        wins=0,
-        losses=0,
-        draws=0
+        wins=sanitized_data.get("wins"),
+        losses=sanitized_data.get("losses"),
+        draws=sanitized_data.get("draws"),
     )
 
     player = await player_profile_service.create(player_data)
     if not player:
         return templates.TemplateResponse(
             "players/new.html",
-            {"request": request, "error": "Failed to create player"}
+            {"request": request, "error": "Failed to create player", "csrf_token": csrf.generate_token()}
         )
     return RedirectResponse(url="/players", status_code=302)
 
@@ -111,7 +119,8 @@ async def player_detail(request: Request, player_id: int):
         {"request": request,
          "player": player,
          "user":user,
-         "profile_linked_user_id": profile_linked_user_id}
+         "profile_linked_user_id": profile_linked_user_id,
+         "csrf_token": csrf.generate_token()}
     )
 
 
@@ -127,7 +136,7 @@ async def edit_player_form(request: Request, player_id: int):
 
     return templates.TemplateResponse(
         "players/edit.html",
-        {"request": request, "player": player}
+        {"request": request, "player": player, "csrf_token": csrf.generate_token()}
     )
 
 
@@ -151,7 +160,7 @@ async def update_player(
     if not updated_player:
         return templates.TemplateResponse(
             "players/edit.html",
-            {"request": request, "error": "Failed to update player"}
+            {"request": request, "error": "Failed to update player", "csrf_token": csrf.generate_token()}
         )
     return RedirectResponse(url=f"/players/{player_id}", status_code=302)
 

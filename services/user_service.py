@@ -78,9 +78,8 @@ class SessionManager:
     def clear_session(cls, user_id: int):
         """Removes a user's session"""
         if user_id in cls._sessions:
-            email = cls._sessions[user_id]['email']
-            
             del cls._sessions[user_id]
+        return False
 
 async def all_users() -> List[User]:
     query = "SELECT * FROM users"

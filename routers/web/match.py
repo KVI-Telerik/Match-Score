@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
-
+from common.security import csrf
 from common.auth_middleware import validate_token
 from common.security import InputSanitizer
 from common.template_config import CustomJinja2Templates
@@ -49,7 +49,7 @@ async def new_match_form(request: Request):
 
     return templates.TemplateResponse(
         "matches/new.html",
-        {"request": request}
+        {"request": request, "csrf_token": csrf.generate_token()}
     )
 
 
@@ -79,7 +79,7 @@ async def create_match(
     if not match:
         return templates.TemplateResponse(
             "matches/new.html",
-            {"request": request, "error": "Failed to create match"}
+            {"request": request, "error": "Failed to create match", "csrf_token": csrf.generate_token()}
         )
     return RedirectResponse(url="/matches", status_code=302)
 
@@ -97,7 +97,8 @@ async def match_detail(request: Request, match_id: int):
         "matches/detail.html",
         {"request": request,
          "user": user,
-         "match": match}
+         "match": match,
+         "csrf_token": csrf.generate_token()}
     )
 
 
