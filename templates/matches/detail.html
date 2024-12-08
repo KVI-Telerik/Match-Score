@@ -82,6 +82,7 @@
                                         </div>
 
                                         <!-- End Match Form -->
+                                        {% if not match.finished %}
                                         <div class="col-md-6 mb-4">
                                             <h4 class="border-bottom pb-2 mb-3">End Match</h4>
                                             <form action="/matches/leagues/{{ match.id }}/end" method="post">
@@ -91,6 +92,7 @@
                                                 </button>
                                             </form>
                                         </div>
+                                        {% endif %}
                                     </div>
                                 {% endif %}
                             </div>

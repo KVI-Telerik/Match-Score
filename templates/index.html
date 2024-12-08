@@ -67,7 +67,7 @@
                         <div class="card">
                             <div class="card-body">
                                 <h5 class="card-title">{{ match.participants }}</h5>
-                                <p class="card-text">{{ match.date }}</p>
+                                <p class="card-text">{{ match.date.strftime("%Y-%m-%d %H:%M") }}</p>
                                 <a href="#" class="btn btn-primary">Match Details</a>
                             </div>
                         </div>

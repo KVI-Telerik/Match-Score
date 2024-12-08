@@ -76,6 +76,12 @@
                                             <i class="fas fa-gamepad me-2"></i>
                                             {{ match.format }}
                                         </p>
+                                         {% if match.finished %}
+                                         <p class="card-text mb-2 d-flex align-items-center">
+                                             <i class="fas fa-hourglass me-2"></i>
+                                                <span>finished</span>
+                                             </p>
+                                         {% endif %}
                                         {% if match.tournament_id %}
                                         <p class="card-text mb-2">
                                             <i class="fas fa-trophy me-2"></i>
