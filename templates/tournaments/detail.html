@@ -12,7 +12,7 @@
     <link rel="icon" href="../static/images/tennis_ball.png" type="image/png">
 </head>
 <body>
-<div class="wrapper"></div>
+<div class="wrapper">
     <div class="content">
         {{ load_header(user,csrf_token) }}
         <div style="margin-top: 120px;"></div>
@@ -30,6 +30,11 @@
                                     <p><strong>Format:</strong> {{ tournament.format }}</p>
                                     <p><strong>Match Format:</strong> {{ tournament.match_format }}</p>
                                     <p><strong>Prize:</strong> ${{ tournament.prize }}</p>
+                                    {% if tournament.format == "League" %}
+                                    <a href="/tournaments/{{ tournament.id }}/standings" class="btn btn-primary mb-3">
+                                        <i class="fas fa-trophy"></i> View Standings
+                                    </a>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-6">
                                     <h4>Matches</h4>
@@ -37,10 +42,10 @@
                                         {% for match in tournament.matches %}
                                         <a href="/matches/{{ match.id }}" class="list-group-item list-group-item-action">
                                             <div class="d-flex justify-content-between">
-                                                <span>{{ match.participants[0].split("-")[0] }}<br>
-
-                                                    {{ match.participants[1].split("-")[0] }}</span>
-
+                                                <span>
+                                                    {{ match.participants[0].split("-")[0] }}<br>
+                                                    {{ match.participants[1].split("-")[0] }}
+                                                </span>
                                             </div>
                                             <p class="mb-1">{{ match.date }}</p>
                                         </a>
@@ -58,7 +63,6 @@
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                         <input type="hidden" name="id" value="{{ tournament_id }}">
                                     </form>
-                                    
                                     {% endif %}
                                     <a href="#" class="btn btn-secondary">Edit Tournament</a>
                                 </div>

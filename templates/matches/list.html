@@ -72,10 +72,12 @@
                                             <i class="far fa-calendar-alt me-2"></i>
                                             {{ match.date.strftime("%Y-%m-%d %H:%M") }}
                                         </p>
+                                        {% if match.tournament_type %}
                                         <p class="card-text mb-2">
                                             <i class="fas fa-gamepad me-2"></i>
-                                            {{ match.format }}
+                                            {{ match.tournament_type }}
                                         </p>
+                                        {% endif %}
                                          {% if match.finished %}
                                          <p class="card-text mb-2 d-flex align-items-center">
                                              <i class="fas fa-hourglass me-2"></i>

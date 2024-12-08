@@ -4,7 +4,7 @@ from common.security import csrf
 from common.auth_middleware import validate_token
 from common.security import InputSanitizer
 from common.template_config import CustomJinja2Templates
-from services import match_service, user_service
+from services import match_service, user_service, tournament_service
 from data.models import Match
 from datetime import datetime
 
@@ -140,7 +140,12 @@ async def end_match(
         raise HTTPException(status_code=403, detail="Admin or director access required")
 
     tournament_id = await match_service.get_tournament_by_match_id(match_id)
-    success = await match_service.match_end_league(match_id, tournament_id)
+    tournament = await tournament_service.get_by_id(tournament_id)
+    success = False
+    if not tournament:
+        success = await match_service.end_single_match(match_id)
+    elif tournament["format"] == "League":
+        success = await match_service.match_end_league(match_id, tournament_id)
 
     if not success:
         raise HTTPException(status_code=400, detail="Failed to end match")

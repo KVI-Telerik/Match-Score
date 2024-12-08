@@ -135,3 +135,23 @@ async def next_round_knockout(
         raise HTTPException(status_code=400, detail="Failed to advance tournament")
 
     return RedirectResponse(url=f"/tournaments/{tournament_id}", status_code=302)
+
+
+@web_tournament_router.get("/{tournament_id}/standings", response_class=HTMLResponse)
+async def tournament_standings(request: Request, tournament_id: int):
+
+    tournament = await tournament_service.get_by_id(tournament_id)
+    if not tournament:
+        raise HTTPException(status_code=404, detail="Tournament not found")
+
+    standings = await tournament_service.get_league_standings(tournament_id)
+
+    return templates.TemplateResponse(
+        "tournaments/standings.html",
+        {
+            "request": request,
+            "tournament": tournament,
+            "standings": standings,
+            "csrf_token": csrf.generate_token()
+        }
+    )

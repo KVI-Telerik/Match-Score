@@ -7,16 +7,19 @@ from datetime import datetime
 from services.notification_service import notify_user_added_to_event
 
 
-
-
 async def get_tournament_by_match_id(match_id: int):
+
     query = """
     SELECT tournament_id 
     FROM match
     WHERE id = $1
     """
-    tournament_id = await DatabaseConnection.read_query(query, match_id)
-    return int(tournament_id[0][0])
+    result = await DatabaseConnection.read_query(query, match_id)
+
+    if not result or result[0][0] is None:
+        return None
+
+    return int(result[0][0])
 
 
 async def create_player_profile(name: str) -> Optional[PlayerProfile]:
@@ -290,49 +293,148 @@ async def match_end_league(match_id: int, tournament_id: int):
     success = await DatabaseConnection.update_query(query, match_id)
     if not success:
         return None
-    
+
     match_data = await get_match_with_scores(match_id)
-       
     participant_scores = [p.split('-') for p in match_data["participants"]]
-    
+
     if participant_scores[0][1] == participant_scores[1][1]:
+        # Handle draw case
         draws = [participant_scores[0][0], participant_scores[1][0]]
-        draw_query = """
+
+        # Update tournament_participants for draw
+        tournament_draw_query = """
         UPDATE tournament_participants
         SET draws = draws + 1, 
         points = points + 1
-        WHERE player_profile_id IN ($1, $2) AND tournament_id = $3;
+        WHERE player_profile_id IN ($1, $2) AND tournament_id = $3
         """
+
+        # Update player_profiles for draw
+        player_draw_query = """
+        UPDATE player_profiles
+        SET draws = draws + 1
+        WHERE id = $1
+        """
+
         p1_obj = str(await player_profile_service.get_player_profile_by_name(draws[0]))
         p2_obj = str(await player_profile_service.get_player_profile_by_name(draws[1]))
         p1_id = int(p1_obj.split('id=')[1].split()[0])
         p2_id = int(p2_obj.split('id=')[1].split()[0])
 
-        await DatabaseConnection.update_query(draw_query, p1_id, p2_id, tournament_id )
+        # Execute tournament participants update
+        await DatabaseConnection.update_query(tournament_draw_query, p1_id, p2_id, tournament_id)
+
+        # Execute player profiles updates
+        await DatabaseConnection.update_query(player_draw_query, p1_id)
+        await DatabaseConnection.update_query(player_draw_query, p2_id)
+
         return f'Match ended at a draw between {draws[0]} and {draws[1]}'
 
     else:
+        # Handle win/loss case
         winner = max(participant_scores, key=lambda x: int(x[1]))[0]
         loser = min(participant_scores, key=lambda x: int(x[1]))[0]
+
         winner_obj = str(await player_profile_service.get_player_profile_by_name(winner))
         loser_obj = str(await player_profile_service.get_player_profile_by_name(loser))
         winner_id = int(winner_obj.split('id=')[1].split()[0])
         loser_id = int(loser_obj.split('id=')[1].split()[0])
-        winner_query = """
+
+        # Update tournament_participants for winner
+        tournament_winner_query = """
         UPDATE tournament_participants
         SET wins = wins + 1,
         points = points + 3
         WHERE player_profile_id = $1 AND tournament_id = $2
         """
-        await DatabaseConnection.update_query(winner_query, winner_id, tournament_id)
-        loser_query = """
+
+        # Update tournament_participants for loser
+        tournament_loser_query = """
         UPDATE tournament_participants
         SET losses = losses + 1
         WHERE player_profile_id = $1 AND tournament_id = $2
         """
-        await DatabaseConnection.update_query(loser_query, loser_id, tournament_id)
+
+        # Update player_profiles for winner
+        player_winner_query = """
+        UPDATE player_profiles
+        SET wins = wins + 1
+        WHERE id = $1
+        """
+
+        # Update player_profiles for loser
+        player_loser_query = """
+        UPDATE player_profiles
+        SET losses = losses + 1
+        WHERE id = $1
+        """
+
+        # Execute tournament participants updates
+        await DatabaseConnection.update_query(tournament_winner_query, winner_id, tournament_id)
+        await DatabaseConnection.update_query(tournament_loser_query, loser_id, tournament_id)
+
+        # Execute player profiles updates
+        await DatabaseConnection.update_query(player_winner_query, winner_id)
+        await DatabaseConnection.update_query(player_loser_query, loser_id)
+
         return f'Match ended. Winner: {winner}'
-   
-    
+
+async def end_single_match(match_id: int) -> bool:
+    match_data = await get_match_with_scores(match_id)
+    if not match_data:
+        return False
+
+    update_query = """
+        UPDATE match
+        SET finished = True
+        WHERE id = $1
+    """
+    success = await DatabaseConnection.update_query(update_query, match_id)
+    if not success:
+        return False
+
+    participant_scores = [p.split('-') for p in match_data["participants"]]
+
+
+    if participant_scores[0][1] == participant_scores[1][1]:
+        # Update both players' draw counts
+        draw_query = """
+            UPDATE player_profiles
+            SET draws = draws + 1
+            WHERE id = $1
+        """
+        for participant in participant_scores:
+            player_obj = await player_profile_service.get_player_profile_by_name(participant[0])
+            if player_obj:
+                await DatabaseConnection.update_query(draw_query, player_obj.id)
+        return True
+
+
+    winner = max(participant_scores, key=lambda x: int(x[1]))[0]
+    loser = min(participant_scores, key=lambda x: int(x[1]))[0]
+
+
+    winner_obj = await player_profile_service.get_player_profile_by_name(winner)
+    loser_obj = await player_profile_service.get_player_profile_by_name(loser)
+
+    if not winner_obj or not loser_obj:
+        return False
+
+    winner_query = """
+        UPDATE player_profiles
+        SET wins = wins + 1
+        WHERE id = $1
+    """
+    await DatabaseConnection.update_query(winner_query, winner_obj.id)
+
+
+    loser_query = """
+        UPDATE player_profiles
+        SET losses = losses + 1
+        WHERE id = $1
+    """
+    await DatabaseConnection.update_query(loser_query, loser_obj.id)
+
+    return True
 
 
