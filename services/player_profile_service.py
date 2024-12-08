@@ -235,16 +235,17 @@ async def get_profile_by_id(player_profile_id: int):
     }
     return player_profile_result
 
+
 async def get_statistics(player_profile_id: int):
-    # First query to get tournament participation
+
     tournament_query = """
         SELECT DISTINCT t.id, t.title
         FROM tournament t
         JOIN tournament_participants tp ON t.id = tp.tournament_id
         WHERE tp.player_profile_id = $1
     """
-    
-    # Second query to get match and opponent data
+
+
     match_query = """
         WITH player_matches AS (
             SELECT 
@@ -261,27 +262,44 @@ async def get_statistics(player_profile_id: int):
             AND mp2.player_profile_id != $1
             AND m.finished = true
         )
-        SELECT opponent_id, opponent_name, COUNT(*) as matches_count
+        SELECT 
+            opponent_id, 
+            opponent_name, 
+            COUNT(*) as matches_count
         FROM player_matches
         GROUP BY opponent_id, opponent_name
-        ORDER BY matches_count DESC
+        ORDER BY COUNT(*) DESC
+        LIMIT 1
     """
-    
-    # Execute both queries
+
+
+    total_matches_query = """
+        SELECT COUNT(DISTINCT m.id) as total_matches
+        FROM match m
+        JOIN match_participants mp ON m.id = mp.match_id
+        WHERE mp.player_profile_id = $1
+        AND m.finished = true
+    """
+
+
     tournaments = await DatabaseConnection.read_query(tournament_query, player_profile_id)
     matches = await DatabaseConnection.read_query(match_query, player_profile_id)
-    
-    # Process opponents
+    total_matches = await DatabaseConnection.read_query(total_matches_query, player_profile_id)
+
+
     most_frequent = {"name": None, "matches": 0}
-    if matches:
+    if matches and matches[0]:
         most_frequent = {
-            "name": matches[0]["opponent_name"],
-            "matches": matches[0]["matches_count"]
+            "name": matches[0][1],
+            "matches": int(matches[0][2])
         }
-    
+
+    # Get total matches count
+    total_match_count = int(total_matches[0][0]) if total_matches and total_matches[0] else 0
+
     return {
-        "total_matches": sum(m["matches_count"] for m in matches) if matches else 0,
+        "total_matches": total_match_count,
         "tournaments_played": len(tournaments),
-        "tournament_names": [t["title"] for t in tournaments],
+        "tournament_names": [t[1] for t in tournaments],
         "most_frequent_opponent": most_frequent
     }
