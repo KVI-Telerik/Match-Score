@@ -36,7 +36,7 @@
                 </li>
                 {% if user %}
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Welcome, {{ user.username }}</a>
+                        <a class="nav-link" href="/users/profile">Welcome, {{ user.username }}</a>
                     </li>
                     <li class="nav-item">
                         <form action="/users/logout" method="POST" class="nav-link m-0 p-0">

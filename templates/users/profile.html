@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - Tennis Daddy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    {% from 'macros.html' import load_header, load_footer %}
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../static/css/style.css">
+    <link rel="icon" href="../static/images/tennis_ball.png" type="image/png">
+</head>
+<body>
+    <div class="wrapper">
+        <div class="content">
+            {{ load_header(user, csrf_token) }}
+
+            <div style="margin-top: 120px;"></div>
+
+            <section class="container my-5">
+                <div class="row">
+                    <div class="col-md-8 offset-md-2">
+                        <div class="card">
+                            <div class="card-header bg-dark text-warning">
+                                <h2 class="mb-0">User Profile</h2>
+                            </div>
+                            <div class="card-body bg-dark text-light">
+
+                                {% if error %}
+                                <div class="alert alert-danger" role="alert">
+                                    {{ error }}
+                                </div>
+                                {% endif %}
+                                {% if success %}
+                                <div class="alert alert-success" role="alert">
+                                    {{ success }}
+                                </div>
+                                {% endif %}
+
+
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <h4 class="text-warning">Personal Information</h4>
+                                        <p><strong class="text-warning">Username:</strong> {{ user.username }}</p>
+                                        <p><strong class="text-warning">First Name:</strong> {{ user.first_name }}</p>
+                                        <p><strong class="text-warning">Last Name:</strong> {{ user.last_name }}</p>
+                                        <p><strong class="text-warning">Email:</strong> {{ user.email }}</p>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <h4 class="text-warning">Account Status</h4>
+                                        <p><strong class="text-warning">Account Type:</strong>
+                                            {% if user.is_admin %}
+                                                Administrator
+                                            {% elif user.is_director %}
+                                                Director
+                                            {% else %}
+                                                Regular User
+                                            {% endif %}
+                                        </p>
+                                        <p><strong class="text-warning">Player Profile:</strong>
+                                            {% if user.player_profile_id %}
+                                                <a href="/players/{{ user.player_profile_id }}" class="btn btn-warning btn-sm">View Profile</a>
+                                            {% else %}
+                                                Not linked
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+
+
+
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h4 class="text-warning">Available Actions</h4>
+                                        {% if not user.player_profile_id %}
+                                        <form action="/users/claim-player-profile" method="POST" class="mb-3">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                            <button type="submit" class="btn btn-warning">Claim Player Profile</button>
+                                        </form>
+                                        {% endif %}
+                                        {% if not user.is_director %}
+                                        <form action="/users/claim-director" method="POST">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                            <button type="submit" class="btn btn-warning">Request Director Status</button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+
+
+                                {% if user.is_director or user.is_admin %}
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <h4 class="text-warning">Management Options</h4>
+                                        <div class="d-flex gap-2">
+                                            <a href="/matches/new" class="btn btn-warning">Create Match</a>
+                                            <a href="/tournaments/new" class="btn btn-warning">Create Tournament</a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+
+                                {% if user.is_admin %}
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h4 class="text-warning">Admin Dashboard</h4>
+                                        <div class="table-responsive">
+                                            <table class="table table-dark table-bordered">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Request ID</th>
+                                                        <th>User</th>
+                                                        <th>Type</th>
+                                                        <th>Status</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for request in requests %}
+                                                    <tr>
+                                                        <td>{{ request.id }}</td>
+                                                        <td>{{ request.user_id }}</td>
+                                                        <td>
+                                                            {% if request.player_profile_id %}
+                                                                Player Profile Claim
+                                                            {% else %}
+                                                                Director Status Request
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            {% if request.approved_or_denied == None %}
+                                                                <span class="badge bg-warning">Pending</span>
+                                                            {% elif request.approved_or_denied %}
+                                                                <span class="badge bg-success">Approved</span>
+                                                            {% else %}
+                                                                <span class="badge bg-danger">Denied</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>
+                                                            {% if request.approved_or_denied == None %}
+                                                            <form action="/users/approve-request/{{ request.id }}" method="POST" class="d-inline">
+                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                                <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                                            </form>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div id="footer-div">
+        {{ load_footer() }}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

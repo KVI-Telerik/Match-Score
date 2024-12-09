@@ -1,10 +1,18 @@
-from fastapi import APIRouter, Request, HTTPException, Depends, logger
+from typing import Optional
+
+from fastapi import APIRouter, Request, HTTPException, Depends, logger, Cookie
 from fastapi.responses import HTMLResponse, RedirectResponse
 import logging
+
+from jose import JWTError
+
+from common.rate_limiter import create_rate_limit
 from common.template_config import CustomJinja2Templates
 from data.models import User, UserLogin
 from services import user_service
 from common.security import InputSanitizer, csrf, verify_csrf_token
+from services.user_service import validate_token_with_session, get_user_by_id, all_requests, claim_director_request, \
+    claim_request, approve_player_claim, approve_director_claim
 
 templates = CustomJinja2Templates(directory="templates")
 web_users_router = APIRouter(prefix="/users")
@@ -88,18 +96,7 @@ async def register(
         )
     return RedirectResponse(url="/users/login", status_code=302)
 
-@web_users_router.get("/profile", response_class=HTMLResponse)
-async def profile_page(request: Request):
-    token = request.cookies.get("access_token")
-    if not token:
-        return RedirectResponse(url="/users/login", status_code=302)
-    return templates.TemplateResponse(
-        "users/profile.html",
-        {
-            "request": request,
-            "csrf_token": csrf.generate_token()  # For any forms in profile page
-        }
-    )
+
 
 @web_users_router.post("/logout")
 async def logout(request: Request):
@@ -152,37 +149,142 @@ async def admin_dashboard(request: Request):
         }
     )
 
-@web_users_router.post("/admin/requests/{request_id}/approve")
+
+
+
+@web_users_router.get("/profile", response_class=HTMLResponse)
+async def profile_page(request: Request):
+
+    token = request.cookies.get("access_token")
+    if not token:
+        return RedirectResponse(url="/users/login", status_code=302)
+
+    try:
+
+        payload = await validate_token_with_session(token)
+        if not payload:
+            return RedirectResponse(url="/users/login", status_code=302)
+
+        user_id = payload.get("id")
+        user = await get_user_by_id(user_id)
+        if not user:
+            return RedirectResponse(url="/users/login", status_code=302)
+
+
+        context = {
+            "request": request,
+            "user": user,
+            "csrf_token": csrf.generate_token()
+        }
+
+
+        if user.is_admin:
+            pending_requests = await all_requests()
+            context["requests"] = pending_requests
+
+
+        return templates.TemplateResponse(
+            "users/profile.html",
+            context
+        )
+
+    except JWTError:
+        response = RedirectResponse(url="/users/login", status_code=302)
+        response.delete_cookie("access_token")
+        return response
+    except Exception as e:
+        print(f"Error in profile page: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+@web_users_router.post("/claim-player-profile", dependencies=[Depends(create_rate_limit(5))])
+async def claim_player_profile(request: Request):
+    token = request.cookies.get("access_token")
+    if not token:
+        return RedirectResponse(url="/users/profile", status_code=302)
+
+    try:
+        success = await claim_request(token)
+        if not success:
+            return templates.TemplateResponse(
+                "users/profile.html",
+                {
+                    "request": request,
+                    "error": "Failed to claim player profile",
+                    "csrf_token": csrf.generate_token()
+                }
+            )
+        return RedirectResponse(url="/users/profile", status_code=302)
+    except Exception as e:
+        return templates.TemplateResponse(
+            "users/profile.html",
+            {
+                "request": request,
+                "error": str(e),
+                "csrf_token": csrf.generate_token()
+            }
+        )
+
+@web_users_router.post("/claim-director", dependencies=[Depends(create_rate_limit(5))])
+async def claim_director(request: Request):
+    token = request.cookies.get("access_token")
+    if not token:
+        return RedirectResponse(url="/users/profile", status_code=302)
+
+    try:
+        success = await claim_director_request(token)
+        if not success:
+            return templates.TemplateResponse(
+                "users/profile.html",
+                {
+                    "request": request,
+                    "error": "Failed to request director status",
+                    "csrf_token": csrf.generate_token()
+                }
+            )
+        return RedirectResponse(url="/users/profile", status_code=302)
+    except Exception as e:
+        return templates.TemplateResponse(
+            "users/profile.html",
+            {
+                "request": request,
+                "error": str(e),
+                "csrf_token": csrf.generate_token()
+            }
+        )
+
+@web_users_router.post("/approve-request/{request_id}")
 async def approve_request(
     request: Request,
     request_id: int,
-    sanitized_data: dict = Depends(InputSanitizer.sanitize_form_data)
 ):
     token = request.cookies.get("access_token")
     if not token:
         return RedirectResponse(url="/users/login", status_code=302)
 
-    is_admin = await user_service.is_admin(token)
-    if not is_admin:
-        raise HTTPException(status_code=403, detail="Admin access required")
+    try:
+        claim_type = await user_service.claim_type(request_id)
+        if claim_type == "player claim":
+            success = await approve_player_claim(request_id)
+        else:
+            success = await approve_director_claim(request_id)
 
-    # Use sanitized request type
-    request_type = sanitized_data.get("request_type")
-    if request_type == "player":
-        success = await user_service.approve_player_claim(request_id)
-    elif request_type == "director":
-        success = await user_service.approve_director_claim(request_id)
-    else:
-        raise HTTPException(status_code=400, detail="Invalid request type")
+        if not success:
+            return templates.TemplateResponse(
+                "users/profile.html",
+                {
+                    "request": request,
+                    "error": "Failed to approve request",
+                    "csrf_token": csrf.generate_token()
+                }
+            )
 
-    if not success:
+        return RedirectResponse(url="/users/profile", status_code=302)
+    except Exception as e:
         return templates.TemplateResponse(
-            "users/admin_dashboard.html",
+            "users/profile.html",
             {
                 "request": request,
-                "error": "Failed to approve request",
+                "error": str(e),
                 "csrf_token": csrf.generate_token()
             }
         )
-
-    return RedirectResponse(url="/users/admin", status_code=302)
