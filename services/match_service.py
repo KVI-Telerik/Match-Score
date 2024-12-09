@@ -94,7 +94,8 @@ async def create(match_data: Match) -> Optional[Match]:
     for profile in participant_profiles:
         user_data = await DatabaseConnection.read_query("SELECT id, last_name,email FROM users WHERE player_profile_id = $1", profile.id)  
         if user_data:
-            await notify_user_added_to_event(user_data, "match", match_data.date)
+            match_details = [match_data.date,match_data.participants]
+            await notify_user_added_to_event(user_data, "match", match_details)
 
     return match_data
 
