@@ -315,7 +315,6 @@ async def advance_knockout_tournament(tournament_id: int):
         if not match_data:
             continue
 
-
         if match_format is None:
             match_format = match_data['format']
 
@@ -324,6 +323,13 @@ async def advance_knockout_tournament(tournament_id: int):
         winners.append(winner)
 
     if len(winners) == 1:
+        # The tournament has concluded, insert the winner into the tournament_winners table
+        winner_profile = await player_profile_service.get_player_profile_by_name(winners[0])
+        winner_query = """
+        INSERT INTO tournament_winners (tournament_id, player_profile_id)
+        VALUES ($1, $2)
+        """
+        await DatabaseConnection.update_query(winner_query, tournament_id, winner_profile.id)
         return f"Tournament {tournament_id} has concluded. Winner: {winners[0]}, Score: {participant_scores[0][1]}:{participant_scores[1][1]}"
 
     if len(winners) < 2:
@@ -336,7 +342,6 @@ async def advance_knockout_tournament(tournament_id: int):
     for i in range(0, len(winners), 2):
         if i + 1 >= len(winners):
             break
-
 
         new_match = Match(
             format=match_format,
@@ -374,26 +379,54 @@ async def advance_knockout_tournament(tournament_id: int):
 
 async def get_league_standings(tournament_id: int):
     query = """
-    SELECT player_profile_id, wins, losses, draws, points
-    FROM tournament_participants
-    WHERE tournament_id = $1
-    ORDER BY points DESC
+    SELECT COUNT(*)
+    FROM match
+    WHERE tournament_id = $1 AND finished = FALSE
     """
-    result = await DatabaseConnection.read_query(query, tournament_id)
-    if not result:
-        return None
+    unfinished_matches = await DatabaseConnection.read_query(query, tournament_id)
 
-    standings = []
-    for row in result:
-        standings.append({
-            "Player": await get_names_by_id(row[0]),
-            "Points": row[4],
-            "Wins": row[1],
-            "Losses": row[2],
-            "Draws": row[3]
-        })
-    
-    return standings
+    if unfinished_matches[0][0] == 0:
+
+        query = """
+        SELECT player_profile_id, wins, losses, draws, points
+        FROM tournament_participants
+        WHERE tournament_id = $1
+        ORDER BY points DESC
+        LIMIT 1
+        """
+        result = await DatabaseConnection.read_query(query, tournament_id)
+
+        if result:
+            winner_profile_id = result[0][0]
+
+            # Insert the winner into the tournament_winners table
+            winner_query = """
+            INSERT INTO tournament_winners (tournament_id, player_profile_id)
+            VALUES ($1, $2)
+            """
+            await DatabaseConnection.update_query(winner_query, tournament_id, winner_profile_id)
+
+
+        query = """
+        SELECT player_profile_id, wins, losses, draws, points
+        FROM tournament_participants
+        WHERE tournament_id = $1
+        ORDER BY points DESC
+        """
+        result = await DatabaseConnection.read_query(query, tournament_id)
+        if not result:
+            return None
+
+        standings = []
+        for row in result:
+            standings.append({
+                "Player": await get_names_by_id(row[0]),
+                "Points": row[4],
+                "Wins": row[1],
+                "Losses": row[2],
+                "Draws": row[3]
+            })
+        return standings
     
 
 
