@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  fastapi:
+    build: .
+    container_name: match_score_app
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
+      - DB_USER=match-score_owner
+      - DB_PASSWORD=3qem5dgbONsA
+      - DB_HOST=ep-broad-morning-a2defk2e.eu-central-1.aws.neon.tech
+      - DB_PORT=5432
+      - DB_DATABASE=match-score

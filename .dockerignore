@@ -1,0 +1,41 @@
+# Byte-compiled files
+*.pyc
+*.pyo
+__pycache__/
+
+# Virtual environment directories
+venv/
+env/
+
+# Distribution and build directories
+build/
+dist/
+*.egg-info/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+*.swo
+*.DS_Store
+
+# IDE and editor files
+.vscode/
+.idea/
+*.iml
+
+# Environment and configuration files
+.env
+*.env
+.env.local
+.env.*.backup
+
+# Test and coverage files
+.coverage
+htmlcov/
+.cache/
+.pytest_cache/
+
+# Docker-related files
+Dockerfile.*
+.dockerignore
