@@ -120,7 +120,7 @@ async def tournament_detail(request: Request, tournament_id: int):
 @web_tournament_router.post("/{id}/next_round")
 async def next_round_knockout(
         request: Request,
-        tournament_id: int
+        id: int  # Changed from tournament_id to id to match the path parameter
 ):
     token = request.cookies.get("access_token")
     if not token:
@@ -130,11 +130,11 @@ async def next_round_knockout(
     if not is_authorized:
         raise HTTPException(status_code=403, detail="Admin or director access required")
 
-    success = await tournament_service.advance_knockout_tournament(tournament_id)
+    success = await tournament_service.advance_knockout_tournament(id)  # Use id here
     if not success:
         raise HTTPException(status_code=400, detail="Failed to advance tournament")
 
-    return RedirectResponse(url=f"/tournaments/{tournament_id}", status_code=302)
+    return RedirectResponse(url=f"/tournaments/{id}", status_code=302)  # And here
 
 
 @web_tournament_router.get("/{tournament_id}/standings", response_class=HTMLResponse)

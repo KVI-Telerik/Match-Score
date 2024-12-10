@@ -289,9 +289,7 @@ async def create_league_matches(tournament_id, participants: List[str], match_fo
 #     return True
 
 
-
 async def advance_knockout_tournament(tournament_id: int):
-
     query = """
         SELECT id FROM match 
         WHERE tournament_id = $1 AND finished = False AND tournament_type = 'Knockout'
@@ -310,48 +308,49 @@ async def advance_knockout_tournament(tournament_id: int):
     await DatabaseConnection.update_query(update_query, tournament_id)
 
     winners = []
-   
+    match_format = None
+
     for match in matches:
         match_data = await match_service.get_match_with_scores(match[0])
         if not match_data:
-            continue  
+            continue
 
-       
+
+        if match_format is None:
+            match_format = match_data['format']
+
         participant_scores = [p.split('-') for p in match_data["participants"]]
         winner = max(participant_scores, key=lambda x: int(x[1]))[0]
         winners.append(winner)
 
-    
     if len(winners) == 1:
         return f"Tournament {tournament_id} has concluded. Winner: {winners[0]}, Score: {participant_scores[0][1]}:{participant_scores[1][1]}"
-       
 
     if len(winners) < 2:
         return f"Tournament {tournament_id} cannot proceed with fewer than 2 participants."
-         
 
-    date_string = match_data["date"]    
-    date = datetime.fromisoformat(date_string) 
-    days = 1  
+    date_string = match_data["date"]
+    date = datetime.fromisoformat(date_string)
+    days = 1
+
     for i in range(0, len(winners), 2):
         if i + 1 >= len(winners):
-            break  
-        
+            break
 
-        match_data = Match(
-            format=match_data["format"],  
+
+        new_match = Match(
+            format=match_format,
             date=date + timedelta(days=days),
             participants=[winners[i], winners[i + 1]],
             tournament_id=tournament_id,
             tournament_type="Knockout"
         )
 
-       
-        if not await match_service.create(match_data):
+        if not await match_service.create(new_match):
             print(f"Failed to create a match for participants {winners[i]} and {winners[i + 1]}")
             return False
 
-        days += 1 
+        days += 1
 
     return True
 
