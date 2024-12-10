@@ -38,18 +38,29 @@ async def create(tournament_data: Tournament, participants: List[str]) -> Option
 
 
 async def get_all(search: Optional[str] = None) -> List[dict]:
-    query = '''
-    SELECT t.id, t.title, t.format, t.match_format, t.prize, p.full_name
+    query = """
+    SELECT
+        t.id,
+        t.title,
+        t.format,
+        t.match_format,
+        t.prize,
+        p.full_name AS participant_name,
+        tw.player_profile_id IS NOT NULL AS has_winner,
+        CASE WHEN tw.player_profile_id IS NOT NULL
+             THEN (SELECT full_name FROM player_profiles WHERE id = tw.player_profile_id)
+             ELSE NULL
+        END AS winner_name
     FROM tournament t
     LEFT JOIN tournament_participants tp ON t.id = tp.tournament_id
     LEFT JOIN player_profiles p ON tp.player_profile_id = p.id
-    '''
-
+    LEFT JOIN tournament_winners tw ON t.id = tw.tournament_id
+    """
 
     if search:
-        query += '''
+        query += """
         WHERE LOWER(t.title) LIKE LOWER($1)
-        '''
+        """
         search_pattern = f'%{search}%'
         result = await DatabaseConnection.read_query(query, search_pattern)
     else:
@@ -67,7 +78,9 @@ async def get_all(search: Optional[str] = None) -> List[dict]:
                 "format": row[2],
                 "match_format": row[3],
                 "prize": row[4],
-                "participants": []
+                "participants": [],
+                "has_winner": row[6],
+                "winner_name": row[7]
             }
         if row[5]:
             result_dict[row[0]]["participants"].append(row[5])
@@ -75,26 +88,33 @@ async def get_all(search: Optional[str] = None) -> List[dict]:
     return list(result_dict.values())
 
 async def get_by_id(tournament_id: int) -> Optional[Dict]:
-    query = '''
-        SELECT 
-            t.id, 
-            t.title, 
-            t.format, 
-            t.match_format, 
-            t.prize, 
-            m.id AS match_id, 
-            m.format AS match_format, 
-            m.date AS match_date, 
-            m.tournament_type, 
-            pp.full_name AS participant_name, 
-            COALESCE(mp.score, 0) AS participant_score
+    query = """
+        SELECT
+            t.id,
+            t.title,
+            t.format,
+            t.match_format,
+            t.prize,
+            m.id AS match_id,
+            m.format AS match_format,
+            m.date AS match_date,
+            m.tournament_type,
+            pp.full_name AS participant_name,
+            COALESCE(mp.score, 0) AS participant_score,
+            tw.player_profile_id IS NOT NULL AS has_winner,
+            tw.player_profile_id AS winner_profile_id,
+            CASE WHEN tw.player_profile_id IS NOT NULL
+                 THEN (SELECT full_name FROM player_profiles WHERE id = tw.player_profile_id)
+                 ELSE NULL
+            END AS winner_name
         FROM tournament t
         LEFT JOIN match m ON t.id = m.tournament_id
         LEFT JOIN match_participants mp ON m.id = mp.match_id
         LEFT JOIN player_profiles pp ON mp.player_profile_id = pp.id
+        LEFT JOIN tournament_winners tw ON t.id = tw.tournament_id
         WHERE t.id = $1
         ORDER BY m.date
-    '''
+    """
     result = await DatabaseConnection.read_query(query, tournament_id)
     if not result:
         return None
@@ -105,7 +125,10 @@ async def get_by_id(tournament_id: int) -> Optional[Dict]:
         "format": result[0][2],
         "match_format": result[0][3],
         "prize": result[0][4],
-        "matches": []
+        "matches": [],
+        "has_winner": result[0][11],
+        "winner_profile_id": result[0][12],
+        "winner_name": result[0][13]
     }
 
     matches = {}
@@ -308,6 +331,7 @@ async def advance_knockout_tournament(tournament_id: int):
     await DatabaseConnection.update_query(update_query, tournament_id)
 
     winners = []
+    losers = []
     match_format = None
 
     for match in matches:
@@ -319,11 +343,36 @@ async def advance_knockout_tournament(tournament_id: int):
             match_format = match_data['format']
 
         participant_scores = [p.split('-') for p in match_data["participants"]]
-        winner = max(participant_scores, key=lambda x: int(x[1]))[0]
+
+        sorted_participants = sorted(participant_scores, key=lambda x: int(x[1]), reverse=True)
+        winner = sorted_participants[0][0]
+        loser = sorted_participants[1][0]
+
         winners.append(winner)
+        losers.append(loser)
+
+
+        winner_profile = await player_profile_service.get_player_profile_by_name(winner)
+        loser_profile = await player_profile_service.get_player_profile_by_name(loser)
+
+
+        winner_update_query = """
+            UPDATE player_profiles 
+            SET wins = wins + 1 
+            WHERE id = $1
+        """
+        await DatabaseConnection.update_query(winner_update_query, winner_profile.id)
+
+
+        loser_update_query = """
+            UPDATE player_profiles 
+            SET losses = losses + 1 
+            WHERE id = $1
+        """
+        await DatabaseConnection.update_query(loser_update_query, loser_profile.id)
 
     if len(winners) == 1:
-        # The tournament has concluded, insert the winner into the tournament_winners table
+
         winner_profile = await player_profile_service.get_player_profile_by_name(winners[0])
         winner_query = """
         INSERT INTO tournament_winners (tournament_id, player_profile_id)
@@ -334,6 +383,7 @@ async def advance_knockout_tournament(tournament_id: int):
 
     if len(winners) < 2:
         return f"Tournament {tournament_id} cannot proceed with fewer than 2 participants."
+
 
     date_string = match_data["date"]
     date = datetime.fromisoformat(date_string)

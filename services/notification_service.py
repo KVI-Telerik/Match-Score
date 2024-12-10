@@ -17,7 +17,7 @@ async def notify_user_added_to_event(user, event_type, event_details):
     subject = f"You've been added to a {event_type}!"
     content = (
         f"Hello Mr.{user_name},\n\n"
-        f"You have been added to the following {event_type}:\n{event_details}"
+        f"You have been added to the following {event_type}:\non {event_details[0]}\n{event_details[1][0]} VS {event_details[1][1]}"
     )
     
     try:

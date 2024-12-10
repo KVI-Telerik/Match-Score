@@ -48,8 +48,17 @@
                             <img src="../static/images/tournament.jpg" class="card-img-top" alt="Tournament {{ tournament.title }}">
                             <div class="card-body">
                                 <h5 class="card-title">{{ tournament.title }}</h5>
-                                <p class="card-text">Format: {{ tournament.format }}</p>
-                                <p class="card-text">Prize: ${{ tournament.prize }}</p>
+                                <p class="card-text">
+                                    <strong>Format:</strong> {{ tournament.format }}<br>
+                                    <strong>Match Format:</strong> {{ tournament.match_format }}<br>
+                                    <strong>Prize:</strong> ${{ tournament.prize }}<br>
+
+                                {% if tournament.has_winner %}
+
+                                    <strong>Winner:</strong> {{ tournament.winner_name }}
+
+                                {% endif %}
+                                </p>
                                 <a href="/tournaments/{{tournament.id}}" class="btn btn-primary">Learn More</a>
                             </div>
                         </div>
@@ -68,7 +77,7 @@
                             <div class="card-body">
                                 <h5 class="card-title">{{ match.participants }}</h5>
                                 <p class="card-text">{{ match.date.strftime("%Y-%m-%d %H:%M") }}</p>
-                                <a href="#" class="btn btn-primary">Match Details</a>
+                                <a href="/matches/{{ match.id }}" class="btn btn-primary">Match Details</a>
                             </div>
                         </div>
                     </div>

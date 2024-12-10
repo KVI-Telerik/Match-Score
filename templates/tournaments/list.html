@@ -30,8 +30,14 @@
                                 <p class="card-text">
                                     <strong>Format:</strong> {{ tournament.format }}<br>
                                     <strong>Match Format:</strong> {{ tournament.match_format }}<br>
-                                    <strong>Prize:</strong> ${{ tournament.prize }}
-                                </p>
+                                    <strong>Prize:</strong> ${{ tournament.prize }}<br>
+
+                                {% if tournament.has_winner %}
+
+                                    <strong>Winner:</strong> {{ tournament.winner_name }}
+
+                                {% endif %}
+                                    </p>
                                 <a href="/tournaments/{{ tournament.id }}" class="btn btn-primary">View Tournament</a>
                             </div>
                         </div>
