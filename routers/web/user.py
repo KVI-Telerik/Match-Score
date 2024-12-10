@@ -1,10 +1,11 @@
-from typing import Optional
+
 
 from fastapi import APIRouter, Request, HTTPException, Depends, logger, Cookie
 from fastapi.responses import HTMLResponse, RedirectResponse
-import logging
+
 
 from jose import JWTError
+
 
 from common.rate_limiter import create_rate_limit
 from common.template_config import CustomJinja2Templates
@@ -12,7 +13,7 @@ from data.models import User, UserLogin
 from services import user_service
 from common.security import InputSanitizer, csrf, verify_csrf_token
 from services.user_service import validate_token_with_session, get_user_by_id, all_requests, claim_director_request, \
-    claim_request, approve_player_claim, approve_director_claim
+    claim_request, approve_player_claim, approve_director_claim, deny_claim, is_admin
 
 templates = CustomJinja2Templates(directory="templates")
 web_users_router = APIRouter(prefix="/users")
@@ -274,6 +275,44 @@ async def approve_request(
                 {
                     "request": request,
                     "error": "Failed to approve request",
+                    "csrf_token": csrf.generate_token()
+                }
+            )
+
+        return RedirectResponse(url="/users/profile", status_code=302)
+    except Exception as e:
+        return templates.TemplateResponse(
+            "users/profile.html",
+            {
+                "request": request,
+                "error": str(e),
+                "csrf_token": csrf.generate_token()
+            }
+        )
+
+
+@web_users_router.post("/deny-request/{request_id}")
+async def deny_request(
+        request: Request,
+        request_id: int,
+):
+    token = request.cookies.get("access_token")
+    if not token:
+        return RedirectResponse(url="/users/login", status_code=302)
+
+    try:
+        # Verify admin access
+        if not await is_admin(token):
+            raise HTTPException(status_code=403, detail="Admin access required")
+
+        success = await deny_claim(request_id)
+
+        if not success:
+            return templates.TemplateResponse(
+                "users/profile.html",
+                {
+                    "request": request,
+                    "error": "Failed to deny request",
                     "csrf_token": csrf.generate_token()
                 }
             )

@@ -361,22 +361,14 @@ async def deny_claim(id):
     status = await DatabaseConnection.update_query(query, id)
 
     if status:
-        query = """
-        DELETE FROM requests
-        WHERE id = $1
-        """
-        result = await DatabaseConnection.update_query(query, id)
+        user_data = await DatabaseConnection.read_query(
+            "SELECT u.id, u.last_name, u.email FROM users u JOIN requests r ON u.id = r.user_id WHERE r.id = $1",
+            id
+        )
+        if user_data:
+            await notify_user_request_handled(user_data, "claim", approved=False)
 
-        # Send notification
-        if result:
-            user_data = await DatabaseConnection.read_query(
-                "SELECT u.id, u.last_name, u.email FROM users u JOIN requests r ON u.id = r.user_id WHERE r.id = $1",
-                id
-            )
-            if user_data:
-                await notify_user_request_handled(user_data, "claim", approved=False)
-
-            return True
+        return True
     else:
         return False
 

@@ -105,61 +105,63 @@
 
 
                                 {% if user.is_admin %}
-                                <div class="row">
-                                    <div class="col-12">
-                                        <h4 class="text-warning">Admin Dashboard</h4>
-                                        <div class="table-responsive">
-                                            <table class="table table-dark table-bordered">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Request ID</th>
-                                                        <th>User</th>
-                                                        <th>Type</th>
-                                                        <th>Status</th>
-                                                        <th>Actions</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {% for request in requests %}
-                                                    <tr>
-                                                        <td>{{ request.id }}</td>
-                                                        <td>{{ request.user_id }}</td>
-                                                        <td>
-                                                            {% if request.player_profile_id %}
-                                                                Player Profile Claim
-                                                            {% else %}
-                                                                Director Status Request
-                                                            {% endif %}
-                                                        </td>
-                                                        <td>
-                                                            {% if request.approved_or_denied == None %}
-                                                                <span class="badge bg-warning">Pending</span>
-                                                            {% elif request.approved_or_denied %}
-                                                                <span class="badge bg-success">Approved</span>
-                                                            {% else %}
-                                                                <span class="badge bg-danger">Denied</span>
-                                                            {% endif %}
-                                                        </td>
-                                                        <td>
-                                                            {% if request.approved_or_denied == None %}
-                                                            <form action="/users/approve-request/{{ request.id }}" method="POST" class="d-inline">
-                                                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                                                <button type="submit" class="btn btn-sm btn-success">Approve</button>
-                                                            </form>
-                                                            {% endif %}
-                                                        </td>
-                                                    </tr>
-                                                    {% endfor %}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endif %}
-                            </div>
+                <div class="row">
+                    <div class="col-12">
+                        <h4 class="text-warning">Admin Dashboard</h4>
+                        <div class="table-responsive">
+                            <table class="table table-dark table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Request ID</th>
+                                        <th>User</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for request in requests %}
+                                    <tr>
+                                        <td>{{ request.id }}</td>
+                                        <td>{{ request.user_id }}</td>
+                                        <td>
+                                            {% if request.player_profile_id %}
+                                                Player Profile Claim
+                                            {% else %}
+                                                Director Status Request
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if request.approved_or_denied == None %}
+                                                <span class="badge bg-warning">Pending</span>
+                                            {% elif request.approved_or_denied %}
+                                                <span class="badge bg-success">Approved</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Denied</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if request.approved_or_denied == None %}
+                                            <div class="d-flex gap-2">
+                                                <form action="/users/approve-request/{{ request.id }}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                    <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                                </form>
+                                                <form action="/users/deny-request/{{ request.id }}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                    <button type="submit" class="btn btn-sm btn-danger">Deny</button>
+                                                </form>
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
+                {% endif %}
             </section>
         </div>
     </div>
