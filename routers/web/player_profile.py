@@ -134,8 +134,11 @@ async def player_detail(request: Request, player_id: int):
 @web_player_router.get("/{player_id}/edit", response_class=HTMLResponse)
 async def edit_player_form(request: Request, player_id: int):
     token = request.cookies.get("access_token")
-    if not token:
-        return RedirectResponse(url="/users/login", status_code=302)
+    user = None
+    if token:
+        payload = await user_service.validate_token_with_session(token)
+        if payload:
+            user = await user_service.get_user_by_id(payload["id"])
 
     player = await player_profile_service.get_by_id(player_id)
     if not player:
@@ -143,7 +146,7 @@ async def edit_player_form(request: Request, player_id: int):
 
     return templates.TemplateResponse(
         "players/edit.html",
-        {"request": request, "player": player, "csrf_token": csrf.generate_token()}
+        {"request": request, "player": player,"user":user, "csrf_token": csrf.generate_token()}
     )
 
 
