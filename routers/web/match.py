@@ -41,8 +41,11 @@ async def match_list(request: Request, tournament: str = None):
 @web_match_router.get("/new", response_class=HTMLResponse)
 async def new_match_form(request: Request):
     token = request.cookies.get("access_token")
-    if not token:
-        return RedirectResponse(url="/users/login", status_code=302)
+    user = None
+    if token:
+        payload = await user_service.validate_token_with_session(token)
+        if payload:
+            user = await user_service.get_user_by_id(payload["id"])
 
     is_authorized = await user_service.is_admin(token) or await user_service.is_director(token)
     if not is_authorized:
@@ -50,7 +53,7 @@ async def new_match_form(request: Request):
 
     return templates.TemplateResponse(
         "matches/new.html",
-        {"request": request, "csrf_token": csrf.generate_token()}
+        {"request": request, "csrf_token": csrf.generate_token(),"user": user}
     )
 
 
@@ -60,8 +63,11 @@ async def create_match(
     sanitized_data: dict = Depends(InputSanitizer.sanitize_form_data)
 ):
     token = request.cookies.get("access_token")
-    if not token:
-        return RedirectResponse(url="/users/login", status_code=302)
+    user = None
+    if token:
+        payload = await user_service.validate_token_with_session(token)
+        if payload:
+            user = await user_service.get_user_by_id(payload["id"])
 
     is_authorized = await user_service.is_admin(token) or await user_service.is_director(token)
     if not is_authorized:
@@ -80,7 +86,7 @@ async def create_match(
     if not match:
         return templates.TemplateResponse(
             "matches/new.html",
-            {"request": request, "error": "Failed to create match", "csrf_token": csrf.generate_token()}
+            {"request": request, "error": "Failed to create match", "csrf_token": csrf.generate_token(),"user": user}
         )
     return RedirectResponse(url="/matches", status_code=302)
 

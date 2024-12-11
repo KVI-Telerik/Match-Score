@@ -139,7 +139,12 @@ async def next_round_knockout(
 
 @web_tournament_router.get("/{tournament_id}/standings", response_class=HTMLResponse)
 async def tournament_standings(request: Request, tournament_id: int):
-
+    token = request.cookies.get("access_token")
+    user = None
+    if token:
+        payload = await user_service.validate_token_with_session(token)
+        if payload:
+            user = await user_service.get_user_by_id(payload["id"])
     tournament = await tournament_service.get_by_id(tournament_id)
     if not tournament:
         raise HTTPException(status_code=404, detail="Tournament not found")
@@ -152,6 +157,7 @@ async def tournament_standings(request: Request, tournament_id: int):
             "request": request,
             "tournament": tournament,
             "standings": standings,
-            "csrf_token": csrf.generate_token()
+            "csrf_token": csrf.generate_token(),
+            "user": user
         }
     )
