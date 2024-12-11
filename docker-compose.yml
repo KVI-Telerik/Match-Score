@@ -10,8 +10,17 @@ services:
       - .:/app
     environment:
       - PYTHONUNBUFFERED=1
-      - DB_USER=match-score_owner
-      - DB_PASSWORD=3qem5dgbONsA
-      - DB_HOST=ep-broad-morning-a2defk2e.eu-central-1.aws.neon.tech
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_HOST=${DB_HOST}
       - DB_PORT=5432
-      - DB_DATABASE=match-score
+      - DB_DATABASE=${DB_DATABASE}
+
+  postgres:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_DATABASE}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
